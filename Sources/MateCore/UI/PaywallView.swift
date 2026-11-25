@@ -14,12 +14,12 @@ public struct PaywallView: View {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 8) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: storeKit.isPro ? "checkmark.seal.fill" : "sparkles")
                         .font(.system(size: 48))
-                        .foregroundStyle(.tint)
-                    Text("Unlock Mate Pro")
+                        .foregroundStyle(storeKit.isPro ? Color.green : Color.accentColor)
+                    Text(storeKit.isPro ? "Mate Pro Unlocked" : "Unlock Mate Pro")
                         .font(.largeTitle.bold())
-                    Text("Empower your daily productivity with intelligent time-blocking and automated calendar orchestration.")
+                    Text(storeKit.isWhitelisted ? "This device is whitelisted for the Pro Plan with full access to intelligent scheduling, natural language capture, and calendar automation." : "Empower your daily productivity with intelligent time-blocking and automated calendar orchestration.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

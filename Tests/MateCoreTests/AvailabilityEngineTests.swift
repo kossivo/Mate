@@ -42,4 +42,70 @@ struct AvailabilityEngineTests {
         let msgEN = engine.formatInvitationMessage(slots: slots, guestName: "Alex", locale: "en")
         #expect(msgEN.contains("Hi Alex"))
     }
+
+    @Test func testSuggestOptimalFreeSlots() {
+        let engine = AvailabilityEngine()
+        let calendar = Calendar(identifier: .gregorian)
+        let targetDate = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date())!
+
+        let meetingStart = calendar.date(bySettingHour: 11, minute: 0, second: 0, of: targetDate)!
+        let meetingEnd = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: targetDate)!
+        let meeting = TimeBlock(title: "Design Review", startTime: meetingStart, endTime: meetingEnd, isLocked: true)
+
+        let prefs = UserPreference(workStartHour: 9, workEndHour: 17, meetingBufferMinutes: 10)
+
+        let suggestions = engine.suggestOptimalSlots(
+            existingCommitments: [meeting],
+            preferences: prefs,
+            targetDate: targetDate,
+            referenceDate: targetDate,
+            maxSlots: 3
+        )
+
+        #expect(!suggestions.isEmpty)
+        let first = suggestions[0]
+        #expect(first.type == .focusDeepWork)
+        #expect(first.title.contains("tập trung sâu"))
+        #expect(first.suggestedActionPrompt == "Xếp việc tập trung")
+    }
+
+    @Test func testGenerateSmartSuggestions() {
+        let engine = AvailabilityEngine()
+        let calendar = Calendar(identifier: .gregorian)
+        let targetDate = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date())!
+
+        // Task with meeting category
+        let meetingTask = TaskItem(
+            title: "Gặp thảo luận hợp đồng với Nam",
+            category: "Meeting",
+            estimatedDuration: 45 * 60,
+            priority: .urgent
+        )
+
+        // Task with approaching deadline
+        let deadlineTask = TaskItem(
+            title: "Hoàn thành slide báo cáo",
+            deadline: calendar.date(bySettingHour: 11, minute: 0, second: 0, of: targetDate),
+            estimatedDuration: 60 * 60,
+            priority: .high
+        )
+
+        let prefs = UserPreference(workStartHour: 9, workEndHour: 17, meetingBufferMinutes: 10)
+
+        let suggestions = engine.generateSmartSuggestions(
+            tasks: [meetingTask, deadlineTask],
+            existingCommitments: [],
+            preferences: prefs,
+            targetDate: targetDate,
+            referenceDate: targetDate
+        )
+
+        #expect(!suggestions.isEmpty)
+        let scheduleMeeting = suggestions.first { $0.kind == .scheduleMeeting }
+        #expect(scheduleMeeting != nil)
+        #expect(scheduleMeeting?.title.contains("Gặp thảo luận hợp đồng với Nam") == true)
+
+        let priorityReallocation = suggestions.first { $0.kind == .reallocatePriority }
+        #expect(priorityReallocation != nil)
+    }
 }

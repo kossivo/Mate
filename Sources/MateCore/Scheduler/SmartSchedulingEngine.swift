@@ -155,4 +155,41 @@ public final class SmartSchedulingEngine: @unchecked Sendable {
             conflictsDetected: conflicts
         )
     }
+
+    /// Reallocates and reorders tasks strictly by priority (urgent -> high -> medium -> low),
+    /// matching high priorities to prime focus hours first and returning the updated task list and scheduled time blocks.
+    public func reallocateTasksByPriority(
+        tasks: [TaskItem],
+        existingCommitments: [TimeBlock],
+        preferences: UserPreference = UserPreference(),
+        targetDate: Date = Date()
+    ) -> (reallocatedTasks: [TaskItem], proposal: SchedulingProposal) {
+        // Sort active tasks strictly by priority first, then deadline, then duration
+        let sortedTasks = tasks.sorted { (lhs, rhs) -> Bool in
+            if lhs.status == .completed && rhs.status != .completed { return false }
+            if lhs.status != .completed && rhs.status == .completed { return true }
+            if lhs.priority != rhs.priority {
+                return lhs.priority < rhs.priority
+            }
+            if let lhsDeadline = lhs.deadline, let rhsDeadline = rhs.deadline {
+                if lhsDeadline != rhsDeadline {
+                    return lhsDeadline < rhsDeadline
+                }
+            } else if lhs.deadline != nil {
+                return true
+            } else if rhs.deadline != nil {
+                return false
+            }
+            return lhs.estimatedDuration < rhs.estimatedDuration
+        }
+
+        let proposal = schedule(
+            tasks: sortedTasks,
+            existingCommitments: existingCommitments,
+            preferences: preferences,
+            targetDate: targetDate
+        )
+
+        return (reallocatedTasks: sortedTasks, proposal: proposal)
+    }
 }

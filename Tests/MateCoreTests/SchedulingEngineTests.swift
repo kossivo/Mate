@@ -112,4 +112,42 @@ struct SmartSchedulingEngineTests {
 
         #expect(!proposal.conflictsDetected.isEmpty)
     }
+
+    @Test func testReallocateTasksByPriority() {
+        let engine = SmartSchedulingEngine()
+        let calendar = Calendar(identifier: .gregorian)
+        let targetDate = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date())!
+
+        let lowTask = TaskItem(title: "Check social media", priority: .low)
+        let mediumTask = TaskItem(title: "Follow up email", priority: .medium)
+        let urgentTask = TaskItem(title: "Fix critical production bug", priority: .urgent)
+        let highTask = TaskItem(title: "Finish client presentation", priority: .high)
+
+        let result = engine.reallocateTasksByPriority(
+            tasks: [lowTask, mediumTask, urgentTask, highTask],
+            existingCommitments: [],
+            preferences: UserPreference(),
+            targetDate: targetDate
+        )
+
+        // Urgent should be first, followed by High, Medium, Low
+        #expect(result.reallocatedTasks.count == 4)
+        #expect(result.reallocatedTasks[0].title == "Fix critical production bug")
+        #expect(result.reallocatedTasks[1].title == "Finish client presentation")
+        #expect(result.reallocatedTasks[2].title == "Follow up email")
+        #expect(result.reallocatedTasks[3].title == "Check social media")
+
+        // First scheduled block should be the urgent task
+        #expect(!result.proposal.scheduledBlocks.isEmpty)
+        #expect(result.proposal.scheduledBlocks[0].title == "Fix critical production bug")
+    }
+
+    @Test func testStoreKitDeviceWhitelisting() async {
+        let storeKit = StoreKitManager.shared
+        storeKit.setWhitelisted(true)
+        #expect(storeKit.isWhitelisted == true)
+        #expect(storeKit.isPro == true)
+        let unlocked = await storeKit.isPremiumUnlocked()
+        #expect(unlocked == true)
+    }
 }

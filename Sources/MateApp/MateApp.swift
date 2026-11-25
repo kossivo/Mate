@@ -5,7 +5,11 @@ import MateCore
 
 @main
 public struct MateApp: App {
-    public init() {}
+    public init() {
+        #if canImport(MateCore)
+        StoreKitManager.shared.setWhitelisted(true)
+        #endif
+    }
 
     public var body: some Scene {
         WindowGroup {

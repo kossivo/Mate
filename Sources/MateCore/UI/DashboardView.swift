@@ -14,6 +14,8 @@ public struct DashboardView: View {
     @State private var scheduledBlocks: [TimeBlock] = []
     @State private var showingCaptureSheet: Bool = false
     @State private var showingScannerSheet: Bool = false
+    @State private var showingSuggestFreeTimeSheet: Bool = false
+    @State private var toastBanner: String? = nil
 
     private let calendar = Calendar.current
 
@@ -100,6 +102,10 @@ public struct DashboardView: View {
                         summaryMetricsCard
                             .padding(.horizontal)
 
+                        // Smart Assistant Quick Actions
+                        smartActionBar
+                            .padding(.horizontal)
+
                         // Tasks to be done section
                         tasksSection
                             .padding(.horizontal)
@@ -111,10 +117,28 @@ public struct DashboardView: View {
                     .padding(.bottom, 90)
                 }
 
-                // Bottom Quick Add Button
-                quickAddBar
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
+                // Bottom Quick Add Button & Toast
+                VStack(spacing: 8) {
+                    if let toast = toastBanner {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(toast)
+                                .font(.caption.bold())
+                                .foregroundStyle(MateTheme.opticWhite)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(MateTheme.elevatedCard)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    quickAddBar
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 16)
             }
             .background(MateTheme.pureBlack.ignoresSafeArea())
             .navigationTitle("Dashboard")
@@ -151,6 +175,17 @@ public struct DashboardView: View {
                     },
                     onAddEvent: { scannedEvent in
                         scheduledBlocks.append(scannedEvent)
+                    }
+                )
+            }
+            .sheet(isPresented: $showingSuggestFreeTimeSheet) {
+                SuggestFreeTimeSheet(
+                    tasks: $tasks,
+                    scheduledBlocks: $scheduledBlocks,
+                    targetDate: targetDateForScope,
+                    onScheduleMeeting: { newBlock in
+                        scheduledBlocks.append(newBlock)
+                        scheduledBlocks.sort { $0.startTime < $1.startTime }
                     }
                 )
             }
@@ -220,6 +255,85 @@ public struct DashboardView: View {
             RoundedRectangle(cornerRadius: MateTheme.cornerRadius)
                 .stroke(MateTheme.microBorder, lineWidth: 1)
         )
+    }
+
+    private var smartActionBar: some View {
+        HStack(spacing: 10) {
+            Button {
+                showingSuggestFreeTimeSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(Color.yellow)
+                    Text("Gợi ý giờ rảnh & Lịch")
+                        .font(.caption.bold())
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(MateTheme.elevatedCard)
+                .foregroundStyle(MateTheme.opticWhite)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                reallocateByPriority()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.up.arrow.down.square.fill")
+                        .foregroundStyle(Color.blue)
+                    Text("Sắp xếp theo ưu tiên")
+                        .font(.caption.bold())
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(MateTheme.elevatedCard)
+                .foregroundStyle(MateTheme.opticWhite)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func reallocateByPriority() {
+        #if canImport(UIKit)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
+        let engine = SmartSchedulingEngine()
+        let result = engine.reallocateTasksByPriority(
+            tasks: tasks,
+            existingCommitments: scheduledBlocks,
+            preferences: UserPreference(),
+            targetDate: targetDateForScope
+        )
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            tasks = result.reallocatedTasks
+            for block in result.proposal.scheduledBlocks {
+                if !scheduledBlocks.contains(where: { $0.title == block.title }) {
+                    scheduledBlocks.append(block)
+                }
+            }
+            scheduledBlocks.sort { $0.startTime < $1.startTime }
+            toastBanner = "✓ Đã tối ưu hoá toàn bộ lịch theo độ ưu tiên"
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            withAnimation {
+                toastBanner = nil
+            }
+        }
+    }
+
+    private var targetDateForScope: Date {
+        switch selectedScope {
+        case .today:
+            return Date()
+        case .tomorrow:
+            return calendar.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+        case .week:
+            return Date()
+        }
     }
 
     private func metricItem(title: String, value: String, icon: String, color: Color) -> some View {

@@ -41,19 +41,36 @@ public struct SettingsView: View {
 
                 Section("Mate Subscription") {
                     HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Mate Pro")
-                                .font(.body.bold())
-                            Text("Smart scheduling & Siri shortcuts")
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Text("Mate Pro")
+                                    .font(.body.bold())
+                                if StoreKitManager.shared.isPro {
+                                    Text("PRO ACTIVE")
+                                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.18))
+                                        .foregroundStyle(Color.green)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            Text(StoreKitManager.shared.isWhitelisted ? "Device whitelisted: All AI & scheduling unlocked" : "Smart scheduling & Siri shortcuts")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Button("Manage") {
-                            showingPaywall = true
+                        if StoreKitManager.shared.isPro {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundStyle(.green)
+                                .font(.title3)
+                        } else {
+                            Button("Manage") {
+                                showingPaywall = true
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
                     }
                 }
 

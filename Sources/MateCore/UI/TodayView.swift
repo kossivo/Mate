@@ -10,11 +10,14 @@ public struct TodayView: View {
     @State private var scheduledBlocks: [TimeBlock]
     @State private var showingCaptureSheet: Bool = false
     @State private var showingPlanSheet: Bool = false
+    @State private var showingSuggestFreeTimeSheet: Bool = false
     @State private var showingShareAvailabilitySheet: Bool = false
     @State private var showingScannerSheet: Bool = false
     @State private var availabilityMessage: String = ""
+    @State private var toastBanner: String? = nil
 
     private let availabilityEngine = AvailabilityEngine()
+    private let schedulingEngine = SmartSchedulingEngine()
 
     public init(
         initialTasks: [TaskItem] = [],
@@ -100,9 +103,27 @@ public struct TodayView: View {
                     .padding(.bottom, 110)
                 }
 
-                floatingActionIsland
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
+                VStack(spacing: 8) {
+                    if let toast = toastBanner {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(toast)
+                                .font(.caption.bold())
+                                .foregroundStyle(MateTheme.opticWhite)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(MateTheme.elevatedCard)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    floatingActionIsland
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 16)
             }
             .background(MateTheme.pureBlack.ignoresSafeArea())
             .toolbar {
@@ -140,6 +161,17 @@ public struct TodayView: View {
                     },
                     onAddEvent: { scannedEvent in
                         scheduledBlocks.append(scannedEvent)
+                    }
+                )
+            }
+            .sheet(isPresented: $showingSuggestFreeTimeSheet) {
+                SuggestFreeTimeSheet(
+                    tasks: $tasks,
+                    scheduledBlocks: $scheduledBlocks,
+                    targetDate: Date(),
+                    onScheduleMeeting: { newBlock in
+                        scheduledBlocks.append(newBlock)
+                        scheduledBlocks.sort { $0.startTime < $1.startTime }
                     }
                 )
             }
@@ -222,21 +254,42 @@ public struct TodayView: View {
                 .lineSpacing(3)
                 .foregroundStyle(MateTheme.opticWhite.opacity(0.9))
 
-            Button {
-                generateAvailability()
-                showingShareAvailabilitySheet = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "clock.arrow.2.circlepath")
-                    Text("Share Free Time")
-                        .font(.caption.bold())
+            HStack(spacing: 8) {
+                Button {
+                    showingSuggestFreeTimeSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(Color.yellow)
+                        Text("Gợi ý giờ rảnh & Lịch")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(MateTheme.elevatedCard)
+                    .foregroundStyle(MateTheme.opticWhite)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(MateTheme.elevatedCard)
-                .foregroundStyle(MateTheme.opticWhite)
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                .buttonStyle(.plain)
+
+                Button {
+                    reallocateTasksByPriority()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.arrow.down.square.fill")
+                            .foregroundStyle(Color.blue)
+                        Text("Sắp xếp theo ưu tiên")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(MateTheme.elevatedCard)
+                    .foregroundStyle(MateTheme.opticWhite)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(18)
@@ -513,6 +566,466 @@ public struct TodayView: View {
             maxSlots: 3
         )
         availabilityMessage = availabilityEngine.formatInvitationMessage(slots: slots, guestName: nil, locale: "vi")
+    }
+
+    private func reallocateTasksByPriority() {
+        #if canImport(UIKit)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
+        let result = schedulingEngine.reallocateTasksByPriority(
+            tasks: tasks,
+            existingCommitments: scheduledBlocks,
+            preferences: UserPreference(),
+            targetDate: Date()
+        )
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            tasks = result.reallocatedTasks
+            for block in result.proposal.scheduledBlocks {
+                if !scheduledBlocks.contains(where: { $0.title == block.title }) {
+                    scheduledBlocks.append(block)
+                }
+            }
+            scheduledBlocks.sort { $0.startTime < $1.startTime }
+            toastBanner = "✓ Đã tối ưu hoá lịch theo độ ưu tiên"
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            withAnimation {
+                toastBanner = nil
+            }
+        }
+    }
+}
+
+public struct SuggestFreeTimeSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding public var tasks: [TaskItem]
+    @Binding public var scheduledBlocks: [TimeBlock]
+    public let targetDate: Date
+    public let onScheduleMeeting: (TimeBlock) -> Void
+
+    @State private var selectedTab: Int = 0 // 0: Gợi ý giờ rảnh, 1: Đề xuất thông minh
+    @State private var toastBanner: String? = nil
+
+    private let availabilityEngine = AvailabilityEngine()
+    private let schedulingEngine = SmartSchedulingEngine()
+
+    public init(
+        tasks: Binding<[TaskItem]>,
+        scheduledBlocks: Binding<[TimeBlock]>,
+        targetDate: Date = Date(),
+        onScheduleMeeting: @escaping (TimeBlock) -> Void = { _ in }
+    ) {
+        self._tasks = tasks
+        self._scheduledBlocks = scheduledBlocks
+        self.targetDate = targetDate
+        self.onScheduleMeeting = onScheduleMeeting
+    }
+
+    public var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                // Header
+                VStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 36))
+                        .foregroundStyle(Color.yellow)
+                    Text("Trợ lý Lịch & Giờ rảnh")
+                        .font(.title2.bold())
+                        .foregroundStyle(MateTheme.opticWhite)
+                    Text("Phân tích lịch trình thông minh để gợi ý khung giờ tốt nhất, dời lịch và phân bổ công việc theo độ ưu tiên.")
+                        .font(.caption)
+                        .foregroundStyle(MateTheme.silverMuted)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                .padding(.top, 8)
+
+                // Segmented Tab Picker
+                pickerSection
+
+                // Content
+                ScrollView {
+                    VStack(spacing: 14) {
+                        if selectedTab == 0 {
+                            freeSlotsSection
+                        } else {
+                            smartSuggestionsSection
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
+                }
+
+                if let toast = toastBanner {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Text(toast)
+                            .font(.caption.bold())
+                            .foregroundStyle(MateTheme.opticWhite)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(MateTheme.elevatedCard)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                    .padding(.bottom, 8)
+                }
+            }
+            .background(MateTheme.pureBlack.ignoresSafeArea())
+            .navigationTitle("Trợ lý Thông minh")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Đóng") { dismiss() }
+                        .foregroundStyle(MateTheme.opticWhite)
+                }
+            }
+        }
+    }
+
+    private var pickerSection: some View {
+        HStack(spacing: 8) {
+            Button {
+                withAnimation { selectedTab = 0 }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "clock.badge.checkmark")
+                    Text("Gợi ý giờ rảnh")
+                }
+                .font(.system(size: 13, weight: selectedTab == 0 ? .bold : .medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(selectedTab == 0 ? MateTheme.elevatedCard : Color.clear)
+                .foregroundStyle(selectedTab == 0 ? MateTheme.opticWhite : MateTheme.slateDim)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedTab == 0 ? MateTheme.microBorder : Color.clear, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                withAnimation { selectedTab = 1 }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "wand.and.stars")
+                    Text("Đề xuất thông minh")
+                }
+                .font(.system(size: 13, weight: selectedTab == 1 ? .bold : .medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(selectedTab == 1 ? MateTheme.elevatedCard : Color.clear)
+                .foregroundStyle(selectedTab == 1 ? MateTheme.opticWhite : MateTheme.slateDim)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedTab == 1 ? MateTheme.microBorder : Color.clear, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(4)
+        .background(MateTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal)
+    }
+
+    private var freeSlotsSection: some View {
+        let suggestions = availabilityEngine.suggestOptimalSlots(
+            existingCommitments: scheduledBlocks,
+            preferences: UserPreference(),
+            targetDate: targetDate,
+            maxSlots: 4
+        )
+
+        return Group {
+            if suggestions.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.system(size: 38))
+                        .foregroundStyle(MateTheme.silverMuted)
+                    Text("Lịch hôm nay đã được lấp đầy")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(MateTheme.opticWhite)
+                    Text("Không còn khoảng trống trên 30 phút trong giờ làm việc. Hãy tận dụng thời gian hoàn thành các cam kết hiện tại.")
+                        .font(.caption)
+                        .foregroundStyle(MateTheme.slateDim)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity)
+                .background(MateTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1))
+            } else {
+                ForEach(suggestions) { item in
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text(item.type.rawValue.uppercased())
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(badgeColor(for: item.type).opacity(0.2))
+                                .foregroundStyle(badgeColor(for: item.type))
+                                .clipShape(Capsule())
+
+                            Spacer()
+
+                            Text("\(Int(item.slot.duration / 60)) phút")
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundStyle(MateTheme.silverMuted)
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(item.slot.startTime.formatted(date: .omitted, time: .shortened)) – \(item.slot.endTime.formatted(date: .omitted, time: .shortened))")
+                                .font(.title3.bold())
+                                .foregroundStyle(MateTheme.opticWhite)
+
+                            Text(item.subtitle)
+                                .font(.caption)
+                                .lineSpacing(2)
+                                .foregroundStyle(MateTheme.silverMuted)
+                        }
+
+                        Divider().background(MateTheme.microBorder)
+
+                        HStack(spacing: 10) {
+                            Button {
+                                scheduleMeetingInSlot(item.slot)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "calendar.badge.plus")
+                                    Text("Lên lịch họp")
+                                        .font(.caption.bold())
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(MateTheme.opticWhite)
+                                .foregroundStyle(MateTheme.pureBlack)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                assignPriorityTaskToSlot(item.slot)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "checklist")
+                                    Text("Xếp việc tập trung")
+                                        .font(.caption.bold())
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(MateTheme.elevatedCard)
+                                .foregroundStyle(MateTheme.opticWhite)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(MateTheme.microBorder, lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(16)
+                    .background(MateTheme.cardBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1))
+                }
+            }
+        }
+    }
+
+    private var smartSuggestionsSection: some View {
+        let smartSuggestions = availabilityEngine.generateSmartSuggestions(
+            tasks: tasks,
+            existingCommitments: scheduledBlocks,
+            preferences: UserPreference(),
+            targetDate: targetDate
+        )
+
+        return Group {
+            if smartSuggestions.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 38))
+                        .foregroundStyle(Color.green)
+                    Text("Lịch trình đang ở trạng thái tối ưu")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(MateTheme.opticWhite)
+                    Text("Không có xung đột, việc gấp đều đã có lịch nhắc hoặc được sắp xếp hợp lý.")
+                        .font(.caption)
+                        .foregroundStyle(MateTheme.slateDim)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity)
+                .background(MateTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1))
+            } else {
+                ForEach(smartSuggestions) { suggestion in
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 10) {
+                            Image(systemName: suggestion.iconName)
+                                .font(.system(size: 18))
+                                .foregroundStyle(suggestionColor(for: suggestion.kind))
+                                .frame(width: 24, height: 24)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(suggestion.title)
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(MateTheme.opticWhite)
+                                Text(suggestion.detail)
+                                    .font(.caption)
+                                    .lineSpacing(2)
+                                    .foregroundStyle(MateTheme.silverMuted)
+                            }
+                        }
+
+                        Button {
+                            applySmartSuggestion(suggestion)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(suggestion.actionTitle)
+                                    .font(.caption.bold())
+                                Image(systemName: "arrow.right")
+                                    .font(.caption2)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(MateTheme.elevatedCard)
+                            .foregroundStyle(MateTheme.opticWhite)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(MateTheme.cardBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(MateTheme.microBorder, lineWidth: 1))
+                }
+            }
+        }
+    }
+
+    private func badgeColor(for type: FreeSlotType) -> Color {
+        switch type {
+        case .focusDeepWork: return .orange
+        case .meetingWindow: return .blue
+        case .quickCatchup: return .purple
+        case .buffer: return .green
+        }
+    }
+
+    private func suggestionColor(for kind: SuggestionKind) -> Color {
+        switch kind {
+        case .freeTime: return .yellow
+        case .scheduleMeeting: return .blue
+        case .reschedule: return .orange
+        case .reminder: return .red
+        case .reallocatePriority: return .purple
+        }
+    }
+
+    private func scheduleMeetingInSlot(_ slot: FreeSlot) {
+        #if canImport(UIKit)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
+        let newBlock = TimeBlock(
+            title: "Cuộc họp mới",
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isLocked: true,
+            category: "Meeting"
+        )
+        onScheduleMeeting(newBlock)
+        withAnimation {
+            toastBanner = "✓ Đã lên lịch cuộc họp lúc \(slot.startTime.formatted(date: .omitted, time: .shortened))"
+        }
+    }
+
+    private func assignPriorityTaskToSlot(_ slot: FreeSlot) {
+        #if canImport(UIKit)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
+        let topTask = tasks.first { $0.status != .completed }
+        let title = topTask?.title ?? "Phiên tập trung sâu"
+        let newBlock = TimeBlock(
+            taskId: topTask?.id,
+            title: title,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isLocked: false,
+            category: topTask?.category ?? "Deep Work"
+        )
+        onScheduleMeeting(newBlock)
+        withAnimation {
+            toastBanner = "✓ Đã xếp '\(title)' vào lúc \(slot.startTime.formatted(date: .omitted, time: .shortened))"
+        }
+    }
+
+    private func applySmartSuggestion(_ suggestion: SmartSuggestion) {
+        #if canImport(UIKit)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
+
+        switch suggestion.kind {
+        case .scheduleMeeting:
+            if let start = suggestion.suggestedStartTime, let end = suggestion.suggestedEndTime {
+                let task = tasks.first { $0.id == suggestion.targetTaskId }
+                let newBlock = TimeBlock(
+                    taskId: task?.id,
+                    title: task?.title ?? "Cuộc họp",
+                    startTime: start,
+                    endTime: end,
+                    isLocked: true,
+                    category: "Meeting"
+                )
+                onScheduleMeeting(newBlock)
+                withAnimation { toastBanner = "✓ Đã lên lịch: \(newBlock.title)" }
+            }
+
+        case .reschedule:
+            if let blockId = suggestion.targetBlockId, let newStart = suggestion.suggestedStartTime, let newEnd = suggestion.suggestedEndTime {
+                if let idx = scheduledBlocks.firstIndex(where: { $0.id == blockId }) {
+                    scheduledBlocks[idx].startTime = newStart
+                    scheduledBlocks[idx].endTime = newEnd
+                    scheduledBlocks.sort { $0.startTime < $1.startTime }
+                    withAnimation { toastBanner = "✓ Đã dời lịch sang \(newStart.formatted(date: .omitted, time: .shortened))" }
+                }
+            } else if let newStart = suggestion.suggestedStartTime {
+                for i in 0..<tasks.count where tasks[i].status != .completed {
+                    tasks[i].deadline = newStart
+                }
+                withAnimation { toastBanner = "✓ Đã chuyển việc tồn đọng sang sáng mai" }
+            }
+
+        case .reminder:
+            if let taskId = suggestion.targetTaskId, let task = tasks.first(where: { $0.id == taskId }) {
+                let reminderDate = suggestion.suggestedStartTime ?? Date().addingTimeInterval(15 * 60)
+                NotificationManager.shared.scheduleTaskReminder(title: task.title, reminderDate: reminderDate, id: taskId)
+                withAnimation { toastBanner = "✓ Đã đặt nhắc việc: \(task.title)" }
+            }
+
+        case .reallocatePriority:
+            let result = schedulingEngine.reallocateTasksByPriority(
+                tasks: tasks,
+                existingCommitments: scheduledBlocks,
+                preferences: UserPreference(),
+                targetDate: targetDate
+            )
+            tasks = result.reallocatedTasks
+            for block in result.proposal.scheduledBlocks {
+                if !scheduledBlocks.contains(where: { $0.title == block.title }) {
+                    scheduledBlocks.append(block)
+                }
+            }
+            scheduledBlocks.sort { $0.startTime < $1.startTime }
+            withAnimation { toastBanner = "✓ Đã tối ưu hoá toàn bộ lịch theo mức độ ưu tiên" }
+
+        case .freeTime:
+            if let start = suggestion.suggestedStartTime, let end = suggestion.suggestedEndTime {
+                scheduleMeetingInSlot(FreeSlot(startTime: start, endTime: end))
+            }
+        }
     }
 }
 
