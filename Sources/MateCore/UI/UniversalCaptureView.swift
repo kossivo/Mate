@@ -7,175 +7,48 @@ public struct UniversalCaptureView: View {
     @StateObject private var voiceManager = VoiceDictationManager.shared
     @State private var existingEvents: [TimeBlock] = []
     private let parser = DeterministicCaptureParser()
-    private let onSave: (TaskItem) -> Void
+    private let onSaveTask: (TaskItem) -> Void
+    private let onSaveEvent: (TimeBlock) -> Void
+
+    public init(
+        onSaveTask: @escaping (TaskItem) -> Void,
+        onSaveEvent: @escaping (TimeBlock) -> Void = { _ in }
+    ) {
+        self.onSaveTask = onSaveTask
+        self.onSaveEvent = onSaveEvent
+    }
 
     public init(onSave: @escaping (TaskItem) -> Void) {
-        self.onSave = onSave
+        self.onSaveTask = onSave
+        self.onSaveEvent = { _ in }
     }
 
     public var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Text("What's on your mind?")
-                        .font(.headline)
-                    Spacer()
-                    // Dictation Toggle Button
-                    Button {
-                        voiceManager.toggleRecording { transcribed in
-                            inputText = transcribed
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: voiceManager.isRecording ? "waveform.circle.fill" : "mic.fill")
-                                .font(.body.bold())
-                                .foregroundStyle(voiceManager.isRecording ? .red : .blue)
-                            Text(voiceManager.isRecording ? "Listening..." : "Dictate")
-                                .font(.caption.bold())
-                                .foregroundStyle(voiceManager.isRecording ? .red : .blue)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(voiceManager.isRecording ? Color.red.opacity(0.12) : Color.blue.opacity(0.12))
-                        .clipShape(Capsule())
-                    }
-                }
-                .padding(.horizontal)
-
-                TextField("e.g. Mai hẹn lúc 8.30, hoàn thành slide trước thứ 6...", text: $inputText, axis: .vertical)
-                    .lineLimit(3...6)
-                    .padding()
-                    .background(MateTheme.secondaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal)
-                    .onChange(of: inputText) { _, newValue in
-                        updateParsedItems(for: newValue)
-                    }
-
+                headerAndDictation
+                textInputField
                 if voiceManager.isRecording {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 8, height: 8)
-                        Text("Speaking in Vietnamese or English... Tap Dictate to finish.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal)
+                    recordingStatusView
                 }
-
                 if !parsedItems.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Recognized Tasks (\(parsedItems.count))")
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal)
-
-                        ScrollView {
-                            VStack(spacing: 10) {
-                                ForEach(Array(parsedItems.enumerated()), id: \.offset) { _, item in
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(item.title)
-                                            .font(.body.bold())
-
-                                        HStack(spacing: 8) {
-                                            if let deadline = item.deadline {
-                                                Label(deadline.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
-                                                    .font(.caption2.bold())
-                                                    .foregroundStyle(.primary)
-                                            }
-
-                                            Label("\(Int(item.estimatedDuration / 60)) min", systemImage: "clock")
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-
-                                            if let cat = item.category {
-                                                Text(cat)
-                                                    .font(.caption2.bold())
-                                                    .padding(.horizontal, 6)
-                                                    .padding(.vertical, 2)
-                                                    .background(Color.blue.opacity(0.1))
-                                                    .foregroundStyle(.blue)
-                                                    .clipShape(Capsule())
-                                            }
-
-                                            if let rec = item.recurrence {
-                                                Label(rec, systemImage: "repeat")
-                                                    .font(.caption2)
-                                                    .foregroundStyle(.green)
-                                            }
-                                        }
-
-                                        // Calendar conflict or availability badge
-                                        if let deadline = item.deadline {
-                                            if let conflict = item.calendarConflict {
-                                                Label("Trùng lịch: \(conflict)", systemImage: "exclamationmark.triangle.fill")
-                                                    .font(.caption2.bold())
-                                                    .foregroundStyle(.red)
-                                            } else {
-                                                Label("Lịch trống lúc \(deadline.formatted(date: .omitted, time: .shortened))", systemImage: "checkmark.seal.fill")
-                                                    .font(.caption2.bold())
-                                                    .foregroundStyle(.green)
-                                            }
-                                        }
-
-                                        if item.isAmbiguous {
-                                            Label("Ambiguous details — placed in Inbox for review", systemImage: "exclamationmark.triangle.fill")
-                                                .font(.caption2)
-                                                .foregroundStyle(.orange)
-                                        }
-                                    }
-                                    .padding()
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(MateTheme.secondaryBackground)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
-                    }
+                    itemsScrollView
                 }
-
                 Spacer()
-
-                Button {
-                    voiceManager.stopRecording()
-                    for item in parsedItems {
-                        let task = TaskItem(
-                            title: item.title,
-                            category: item.category,
-                            deadline: item.deadline,
-                            estimatedDuration: item.estimatedDuration,
-                            priority: item.priority,
-                            status: item.isAmbiguous ? .inbox : .planned,
-                            recurrenceRule: item.recurrence
-                        )
-                        onSave(task)
-                    }
-                    dismiss()
-                } label: {
-                    Text("Add \(max(1, parsedItems.count)) Task\(parsedItems.count > 1 ? "s" : "")")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(inputText.isEmpty ? Color.gray.opacity(0.3) : Color.blue)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .disabled(inputText.isEmpty)
-                .padding(.horizontal)
-                .padding(.bottom)
+                actionSaveButton
             }
-            .navigationTitle("Quick Capture")
+            .background(MateTheme.pureBlack.ignoresSafeArea())
+            .navigationTitle("Nhập nhanh")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("Đóng") {
                         voiceManager.stopRecording()
                         dismiss()
                     }
+                    .foregroundStyle(MateTheme.opticWhite)
                 }
             }
             .task {
@@ -192,6 +65,227 @@ public struct UniversalCaptureView: View {
                 voiceManager.stopRecording()
             }
         }
+    }
+
+    // MARK: - Subviews
+
+    private var headerAndDictation: some View {
+        HStack {
+            Text("Ghi nhanh hoặc Giọng nói")
+                .font(.headline.bold())
+                .foregroundStyle(MateTheme.opticWhite)
+            Spacer()
+            Button {
+                voiceManager.toggleRecording { transcribed in
+                    inputText = transcribed
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: voiceManager.isRecording ? "waveform.circle.fill" : "mic.fill")
+                        .font(.body.bold())
+                        .foregroundStyle(voiceManager.isRecording ? .red : MateTheme.opticWhite)
+                    Text(voiceManager.isRecording ? "Đang nghe..." : "Nói")
+                        .font(.caption.bold())
+                        .foregroundStyle(voiceManager.isRecording ? .red : MateTheme.opticWhite)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(voiceManager.isRecording ? Color.red.opacity(0.2) : MateTheme.elevatedCard)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+            }
+        }
+        .padding(.horizontal)
+    }
+
+    private var textInputField: some View {
+        TextField("Ví dụ: Mai hẹn lúc 8.30 gặp Nam, nhắc mua sữa lúc 18h...", text: $inputText, axis: .vertical)
+            .lineLimit(3...5)
+            .padding()
+            .background(MateTheme.cardBackground)
+            .foregroundStyle(MateTheme.opticWhite)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
+            )
+            .padding(.horizontal)
+            .onChange(of: inputText) { _, newValue in
+                updateParsedItems(for: newValue)
+            }
+    }
+
+    private var recordingStatusView: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 8, height: 8)
+            Text("Đang lắng nghe tiếng Việt / tiếng Anh... Chạm Nói để dừng.")
+                .font(.caption)
+                .foregroundStyle(MateTheme.silverMuted)
+        }
+        .padding(.horizontal)
+    }
+
+    private var itemsScrollView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("MỤC NHẬN DIỆN (\(parsedItems.count))")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(MateTheme.silverMuted)
+                Spacer()
+                Text("Chạm icon để đổi Lịch ↔ Việc")
+                    .font(.caption2)
+                    .foregroundStyle(MateTheme.slateDim)
+            }
+            .padding(.horizontal)
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(parsedItems.indices, id: \.self) { index in
+                        singleItemCard(index: index)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    private func singleItemCard(index: Int) -> some View {
+        let item = parsedItems[index]
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                Button {
+                    #if canImport(UIKit)
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    #endif
+                    parsedItems[index].itemType = (item.itemType == .event ? .task : .event)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: item.itemType == .event ? "calendar.badge.clock" : "bell.fill")
+                        Text(item.itemType == .event ? "LỊCH HẸN" : "NHẮC VIỆC")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(item.itemType == .event ? Color.indigo.opacity(0.25) : Color.orange.opacity(0.2))
+                    .foregroundStyle(item.itemType == .event ? Color.indigo : Color.orange)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                if let cat = item.category {
+                    Text(cat)
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(MateTheme.elevatedCard)
+                        .foregroundStyle(MateTheme.silverMuted)
+                        .clipShape(Capsule())
+                }
+            }
+
+            Text(item.title)
+                .font(.body.bold())
+                .foregroundStyle(MateTheme.opticWhite)
+
+            HStack(spacing: 12) {
+                if let deadline = item.deadline {
+                    if item.itemType == .event {
+                        let end = deadline.addingTimeInterval(item.estimatedDuration)
+                        Label("\(deadline.formatted(date: .abbreviated, time: .shortened)) – \(end.formatted(date: .omitted, time: .shortened))", systemImage: "clock.fill")
+                            .font(.caption.bold())
+                            .foregroundStyle(MateTheme.opticWhite)
+                    } else {
+                        Label("Hạn chót: \(deadline.formatted(date: .abbreviated, time: .shortened))", systemImage: "bell.badge.fill")
+                            .font(.caption.bold())
+                            .foregroundStyle(MateTheme.opticWhite)
+                    }
+                }
+
+                if item.itemType == .event {
+                    Text("(\(Int(item.estimatedDuration / 60)) phút)")
+                        .font(.caption2)
+                        .foregroundStyle(MateTheme.slateDim)
+                }
+
+                if let rec = item.recurrence {
+                    Label(rec, systemImage: "repeat")
+                        .font(.caption2)
+                        .foregroundStyle(.green)
+                }
+            }
+
+            if item.deadline != nil {
+                if let conflict = item.calendarConflict {
+                    Label("Trùng với: \(conflict)", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.red)
+                } else {
+                    Label("Khung giờ trống trên lịch", systemImage: "checkmark.seal.fill")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.green)
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MateTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
+        )
+    }
+
+    private var actionSaveButton: some View {
+        Button {
+            voiceManager.stopRecording()
+            for item in parsedItems {
+                if item.itemType == .event {
+                    let start = item.deadline ?? Date()
+                    let end = start.addingTimeInterval(item.estimatedDuration)
+                    let block = TimeBlock(
+                        title: item.title,
+                        startTime: start,
+                        endTime: end,
+                        isLocked: true,
+                        category: item.category ?? "Meeting"
+                    )
+                    onSaveEvent(block)
+                } else {
+                    let task = TaskItem(
+                        title: item.title,
+                        category: item.category,
+                        deadline: item.deadline,
+                        estimatedDuration: item.estimatedDuration,
+                        priority: item.priority,
+                        status: item.isAmbiguous ? .inbox : .planned,
+                        recurrenceRule: item.recurrence
+                    )
+                    onSaveTask(task)
+                    if let deadline = item.deadline {
+                        NotificationManager.shared.scheduleTaskReminder(title: item.title, reminderDate: deadline, id: task.id)
+                    }
+                }
+            }
+            dismiss()
+        } label: {
+            HStack {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 15, weight: .bold))
+                Text("Lưu \(max(1, parsedItems.count)) mục vào Lịch & Nhiệm vụ")
+                    .font(.headline)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(inputText.isEmpty ? MateTheme.elevatedCard : MateTheme.opticWhite)
+            .foregroundStyle(inputText.isEmpty ? MateTheme.slateDim : MateTheme.pureBlack)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .disabled(inputText.isEmpty)
+        .padding(.horizontal)
+        .padding(.bottom)
     }
 
     private func updateParsedItems(for text: String) {

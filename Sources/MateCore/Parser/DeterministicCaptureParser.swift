@@ -1,9 +1,15 @@
 import Foundation
 import NaturalLanguage
 
+public enum CaptureItemType: String, Sendable, Codable {
+    case event // Calendar meeting, appointment, specific time block
+    case task  // Reminder, to-do item
+}
+
 public struct ParsedCaptureItem: Sendable, Equatable {
     public var rawText: String
     public var title: String
+    public var itemType: CaptureItemType
     public var deadline: Date?
     public var estimatedDuration: TimeInterval
     public var priority: TaskPriority
@@ -16,6 +22,7 @@ public struct ParsedCaptureItem: Sendable, Equatable {
     public init(
         rawText: String,
         title: String,
+        itemType: CaptureItemType = .task,
         deadline: Date? = nil,
         estimatedDuration: TimeInterval = 30 * 60,
         priority: TaskPriority = .medium,
@@ -27,6 +34,7 @@ public struct ParsedCaptureItem: Sendable, Equatable {
     ) {
         self.rawText = rawText
         self.title = title
+        self.itemType = itemType
         self.deadline = deadline
         self.estimatedDuration = estimatedDuration
         self.priority = priority
@@ -96,6 +104,7 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
         var ambiguityNotes: [String] = []
         var isAmbiguous = false
         var category: String? = nil
+        var itemType: CaptureItemType = .task
 
         let lowercased = cleanClause.lowercased()
 
@@ -132,6 +141,10 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
             dateDefaultHour = 20
             cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow evening|tối mai", with: "", options: .regularExpression)
+        } else if lowercased.contains("ngày kia") || lowercased.contains("ngày mốt") || lowercased.contains("mốt") {
+            targetBaseDate = calendar.date(byAdding: .day, value: 2, to: referenceDate)
+            dateDefaultHour = 9
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)ngày kia|ngày mốt|\\bmốt\\b", with: "", options: .regularExpression)
         } else if lowercased.contains("tomorrow") || lowercased.contains("ngày mai") || lowercased.contains("mai") {
             targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
             dateDefaultHour = 9
@@ -179,6 +192,7 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             components.second = 0
 
             var resolvedDate = calendar.date(from: components) ?? base
+            // If user mentioned a time today that has already passed, roll to tomorrow
             if targetBaseDate == nil && resolvedDate < referenceDate {
                 resolvedDate = calendar.date(byAdding: .day, value: 1, to: resolvedDate) ?? resolvedDate
             }
@@ -202,29 +216,58 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             cleanClause = cleanClause.replacingOccurrences(of: "(?i)important|high priority|quan trọng", with: "", options: .regularExpression)
         }
 
-        // 5. Category & Duration Inferences
-        if lowercased.contains("hẹn") || lowercased.contains("cuộc hẹn") || lowercased.contains("gặp") ||
-           lowercased.contains("meeting") || lowercased.contains("meet") || lowercased.contains("appointment") {
-            duration = 30 * 60
-            category = category ?? "Meeting"
+        // 5. Item Type Distinction: Event (Calendar) vs Task (Reminder)
+        let eventKeywords = [
+            "hẹn", "cuộc hẹn", "gặp", "họp", "meeting", "meet", "appointment",
+            "sync", "1on1", "phỏng vấn", "interview", "conference call", "zoom meeting",
+            "ăn trưa", "lunch", "dinner", "đi khám", "bác sĩ", "doctor",
+            "bay", "flight", "cà phê", "coffee", "lịch hẹn", "đi ăn", "ăn tối"
+        ]
+        let taskKeywords = [
+            "nhắc", "nhớ", "mua", "làm", "nộp", "gửi", "viết", "hoàn thành",
+            "xong", "remind", "buy", "submit", "send", "write", "finish",
+            "review", "check", "tập thể dục", "gym", "workout", "exercise",
+            "call", "gọi cho", "gọi", "phone", "uống thuốc", "thanh toán", "chuyển khoản",
+            "báo cáo", "slide", "presentation"
+        ]
+
+        let hasEventKeyword = eventKeywords.contains { lowercased.contains($0) }
+        let hasTaskKeyword = taskKeywords.contains { lowercased.contains($0) }
+
+        if lowercased.contains("call") || lowercased.contains("gọi cho") || lowercased.contains("gọi điện") || lowercased.contains("gọi mẹ") || lowercased.contains("gọi ") {
+            duration = 15 * 60
+            category = "Personal"
+            itemType = .task
         } else if lowercased.contains("presentation") || lowercased.contains("slide") || lowercased.contains("báo cáo") || lowercased.contains("report") {
             duration = 60 * 60
-            category = category ?? "Work"
-        } else if lowercased.contains("call ") || lowercased.contains("gọi cho") || lowercased.contains("gọi điện") {
-            duration = 15 * 60
-            category = category ?? "Personal"
-        } else if lowercased.contains("exercise") || lowercased.contains("workout") || lowercased.contains("tập thể dục") || lowercased.contains("gym") || lowercased.contains("chạy bộ") {
+            category = "Work"
+            itemType = .task
+        } else if lowercased.contains("tập thể dục") || lowercased.contains("gym") || lowercased.contains("workout") || lowercased.contains("exercise") {
             duration = 45 * 60
-            category = category ?? "Health"
-        } else if lowercased.contains("cà phê") || lowercased.contains("coffee") || lowercased.contains("ăn trưa") || lowercased.contains("lunch") {
-            duration = 45 * 60
-            category = category ?? "Social"
+            category = "Health & Routine"
+            itemType = .task
+        } else if hasEventKeyword && !hasTaskKeyword {
+            itemType = .event
+            duration = 60 * 60 // Default 1 hour meeting
+            category = "Meeting"
+        } else if hasTaskKeyword {
+            itemType = .task
+            duration = 30 * 60
+            category = category ?? "Task"
+        } else {
+            // Default inference: if time is specific and contains appointment terms -> event, else task
+            if hasEventKeyword {
+                itemType = .event
+                category = "Meeting"
+            } else {
+                itemType = .task
+            }
         }
 
-        // Ambiguity check
+        // 6. Ambiguity check
         if deadline == nil && (lowercased.contains("finish") || lowercased.contains("complete") || lowercased.contains("hoàn thành") || lowercased.contains("xong")) {
             isAmbiguous = true
-            ambiguityNotes.append("Chưa rõ hạn chót — chuyển vào Hộp thư để bạn xác nhận.")
+            ambiguityNotes.append("Chưa rõ hạn chót — cần xác nhận thời gian.")
         }
 
         var cleanedTitle = cleanClause
@@ -233,12 +276,13 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             .capitalizedFirstLetter()
 
         if cleanedTitle.isEmpty || cleanedTitle.lowercased() == "hẹn" {
-            cleanedTitle = (category == "Meeting") ? "Cuộc hẹn" : "Nhiệm vụ mới"
+            cleanedTitle = (itemType == .event) ? "Cuộc hẹn" : "Nhiệm vụ mới"
         }
 
         return ParsedCaptureItem(
             rawText: clause,
             title: cleanedTitle.isEmpty ? clause : cleanedTitle,
+            itemType: itemType,
             deadline: deadline,
             estimatedDuration: duration,
             priority: priority,
@@ -257,31 +301,50 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
 
     private func extractTimeValues(from text: String) -> ExtractedTime? {
         // Pattern 1: With prefix "lúc", "vào lúc", "at", "vào"
-        // e.g. "lúc 8.30", "lúc 8:30", "lúc 14h30", "at 3pm", "lúc 9h"
-        let patternPrefixed = "(?:vào lúc|lúc|at|vào)\\s+(\\d{1,2})(?:[:.h](\\d{2}))?\\s*(am|pm)?"
+        // e.g. "lúc 8.30", "lúc 8:30", "lúc 14h30", "at 3pm", "lúc 9h", "lúc 9 giờ"
+        let patternPrefixed = "(?:vào lúc|lúc|at|vào)\\s+(\\d{1,2})(?:[:.h](\\d{2}))?(?:\\s*giờ(?:\\s*(\\d{2}))?)?\\s*(am|pm|sáng|chiều|tối)?"
         if let match = matchTime(pattern: patternPrefixed, text: text) {
             return match
         }
 
-        // Pattern 2: Standalone format with separator e.g. "8.30", "15:45", "9h30"
-        let patternSeparated = "\\b(\\d{1,2})[:.h](\\d{2})\\s*(am|pm)?\\b"
+        // Pattern 2: Vietnamese hour notation e.g. "9 giờ rưỡi", "9h rưỡi"
+        let patternRuoi = "\\b(\\d{1,2})(?:h|\\s*giờ)\\s*rưỡi\\b"
+        if let match = matchRuoi(pattern: patternRuoi, text: text) {
+            return match
+        }
+
+        // Pattern 3: Standalone format with separator e.g. "8.30", "15:45", "9h30"
+        let patternSeparated = "\\b(\\d{1,2})[:.h](\\d{2})\\s*(am|pm|sáng|chiều|tối)?\\b"
         if let match = matchTime(pattern: patternSeparated, text: text) {
             return match
         }
 
-        // Pattern 3: Standalone hour with h e.g. "9h", "15h"
-        let patternHourH = "\\b(\\d{1,2})h\\b"
+        // Pattern 4: Standalone hour with h or giờ e.g. "9h", "15h", "9 giờ"
+        let patternHourH = "\\b(\\d{1,2})(?:h|\\s*giờ)\\s*(sáng|chiều|tối)?\\b"
         if let match = matchTime(pattern: patternHourH, text: text) {
             return match
         }
 
-        // Pattern 4: Standalone hour with am/pm e.g. "9am", "3pm"
+        // Pattern 5: Standalone hour with am/pm e.g. "9am", "3pm"
         let patternAmPm = "\\b(\\d{1,2})\\s*(am|pm)\\b"
         if let match = matchTime(pattern: patternAmPm, text: text) {
             return match
         }
 
         return nil
+    }
+
+    private func matchRuoi(pattern: String, text: String) -> ExtractedTime? {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) else {
+            return nil
+        }
+        let matchedString = (text as NSString).substring(with: match.range)
+        guard let hourRange = Range(match.range(at: 1), in: text),
+              let hour = Int(text[hourRange]) else {
+            return nil
+        }
+        return ExtractedTime(hour: hour, minute: 30, matchedString: matchedString)
     }
 
     private func matchTime(pattern: String, text: String) -> ExtractedTime? {
@@ -303,24 +366,20 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             minute = minVal
         }
 
-        if match.numberOfRanges > 3 && match.range(at: 3).location != NSNotFound,
-           let ampmRange = Range(match.range(at: 3), in: text) {
-            let ampm = text[ampmRange].lowercased()
-            if ampm == "pm" && hour < 12 {
-                hour += 12
-            } else if ampm == "am" && hour == 12 {
-                hour = 0
+        // Check suffix (am, pm, sáng, chiều, tối)
+        for i in 3..<match.numberOfRanges {
+            if match.range(at: i).location != NSNotFound,
+               let suffixRange = Range(match.range(at: i), in: text) {
+                let suffix = text[suffixRange].lowercased()
+                if (suffix == "pm" || suffix == "chiều" || suffix == "tối") && hour < 12 {
+                    hour += 12
+                } else if (suffix == "am" || suffix == "sáng") && hour == 12 {
+                    hour = 0
+                }
             }
         }
 
         return ExtractedTime(hour: hour, minute: minute, matchedString: matchedString)
-    }
-
-    private func dateForTonight(from date: Date) -> Date {
-        var components = calendar.dateComponents([.year, .month, .day], from: date)
-        components.hour = 20
-        components.minute = 0
-        return calendar.date(from: components) ?? date
     }
 
     private func dateForNextWeekday(weekday: Int, from date: Date) -> Date {

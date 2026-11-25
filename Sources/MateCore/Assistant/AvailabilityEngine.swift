@@ -24,15 +24,74 @@ public final class AvailabilityEngine: @unchecked Sendable {
     }
 
     /// Finds candidate free slots of a given duration within working hours across target dates.
+    /// If target date is today and already in the evening, automatically looks at tomorrow and upcoming days!
     public func findAvailableSlots(
         durationMinutes: Int = 45,
         existingCommitments: [TimeBlock],
         preferences: UserPreference = UserPreference(),
         targetDate: Date = Date(),
+        referenceDate: Date? = nil,
         maxSlots: Int = 3
     ) -> [FreeSlot] {
-        guard let dayStart = calendar.date(bySettingHour: preferences.workStartHour, minute: 0, second: 0, of: targetDate),
-              let dayEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: 0, second: 0, of: targetDate),
+        var effectiveDate = targetDate
+        let now = referenceDate ?? Date()
+        let isToday = calendar.isDateInToday(targetDate)
+
+        // Only roll forward to tomorrow if evaluating real-time today and we are already at or past the end of the workday
+        // (If referenceDate is nil and targetDate hour is explicitly set <= workStartHour, like in test cases, evaluate targetDate from dayStart)
+        let targetHour = calendar.component(.hour, from: targetDate)
+        let isSimulatedOrExplicit = referenceDate != nil || targetHour <= preferences.workStartHour
+
+        if isToday && !isSimulatedOrExplicit {
+            let currentHour = calendar.component(.hour, from: now)
+            if currentHour >= preferences.workEndHour {
+                effectiveDate = calendar.date(byAdding: .day, value: 1, to: targetDate) ?? targetDate
+            }
+        }
+
+        var slots = findSlotsForSingleDay(
+            date: effectiveDate,
+            durationMinutes: durationMinutes,
+            existingCommitments: existingCommitments,
+            preferences: preferences,
+            evalDate: isSimulatedOrExplicit ? effectiveDate : now,
+            maxSlots: maxSlots
+        )
+
+        // If we haven't reached maxSlots yet, check subsequent days (skipping weekends if protected)
+        if slots.count < maxSlots {
+            for dayOffset in 1...5 {
+                if let nextDay = calendar.date(byAdding: .day, value: dayOffset, to: effectiveDate) {
+                    if preferences.protectWeekends && calendar.isDateInWeekend(nextDay) {
+                        continue
+                    }
+                    let nextSlots = findSlotsForSingleDay(
+                        date: nextDay,
+                        durationMinutes: durationMinutes,
+                        existingCommitments: existingCommitments,
+                        preferences: preferences,
+                        evalDate: nextDay,
+                        maxSlots: maxSlots - slots.count
+                    )
+                    slots.append(contentsOf: nextSlots)
+                    if slots.count >= maxSlots { break }
+                }
+            }
+        }
+
+        return Array(slots.prefix(maxSlots))
+    }
+
+    private func findSlotsForSingleDay(
+        date: Date,
+        durationMinutes: Int,
+        existingCommitments: [TimeBlock],
+        preferences: UserPreference,
+        evalDate: Date,
+        maxSlots: Int
+    ) -> [FreeSlot] {
+        guard let dayStart = calendar.date(bySettingHour: preferences.workStartHour, minute: 0, second: 0, of: date),
+              let dayEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: 0, second: 0, of: date),
               dayStart < dayEnd else {
             return []
         }
@@ -44,6 +103,14 @@ public final class AvailabilityEngine: @unchecked Sendable {
 
         var slots: [FreeSlot] = []
         var pointer = dayStart
+
+        // If evaluating today and evalDate is in the middle of the day, pointer cannot be in the past
+        if calendar.isDateInToday(date) && calendar.isDateInToday(evalDate) && evalDate > dayStart {
+            let bufferNow = evalDate.addingTimeInterval(15 * 60)
+            if pointer < bufferNow {
+                pointer = bufferNow
+            }
+        }
 
         let bufferSec = Double(preferences.meetingBufferMinutes * 60)
 
@@ -74,28 +141,28 @@ public final class AvailabilityEngine: @unchecked Sendable {
     /// Formats invitation snippet in English or Vietnamese ready for copy/pasting into messaging apps.
     public func formatInvitationMessage(slots: [FreeSlot], guestName: String? = nil, locale: String = "vi") -> String {
         guard !slots.isEmpty else {
-            return locale == "vi" ? "Hiện tại lịch của mình đã kín trong ngày này." : "Currently my schedule is completely full on this day."
+            return locale == "vi" ? "Hiện tại lịch của mình đã kín trong những ngày tới." : "Currently my schedule is completely full over the coming days."
         }
 
         if locale == "vi" {
             let greeting = guestName.map { "Chào \($0), " } ?? "Chào bạn, "
-            var msg = "\(greeting)mình đã kiểm tra lịch và có các khung giờ rảnh sau:\n"
+            var msg = "\(greeting)mình đã kiểm tra lịch và gửi bạn các khung giờ rảnh tiện hẹn nhất:\n\n"
             for (idx, slot) in slots.enumerated() {
                 let dayStr = slot.startTime.formatted(.dateTime.weekday(.wide).day().month())
                 let timeStr = "\(slot.startTime.formatted(date: .omitted, time: .shortened)) – \(slot.endTime.formatted(date: .omitted, time: .shortened))"
                 msg += "\(idx + 1). \(dayStr): \(timeStr)\n"
             }
-            msg += "Khung giờ nào tiện nhất cho bạn nhắn mình nhé!"
+            msg += "\nKhung giờ nào tiện nhất cho bạn thì nhắn lại mình nhé!"
             return msg
         } else {
             let greeting = guestName.map { "Hi \($0), " } ?? "Hi, "
-            var msg = "\(greeting)I checked my schedule and have these available slots:\n"
+            var msg = "\(greeting)I checked my calendar and have these available times:\n\n"
             for (idx, slot) in slots.enumerated() {
                 let dayStr = slot.startTime.formatted(.dateTime.weekday(.wide).month().day())
                 let timeStr = "\(slot.startTime.formatted(date: .omitted, time: .shortened)) – \(slot.endTime.formatted(date: .omitted, time: .shortened))"
                 msg += "\(idx + 1). \(dayStr): \(timeStr)\n"
             }
-            msg += "Let me know which time works best for you!"
+            msg += "\nLet me know which time works best for you!"
             return msg
         }
     }

@@ -3,7 +3,9 @@ import SwiftUI
 public struct MainTabView: View {
     @State private var selectedTab: Int = 0
 
-    public init() {}
+    public init(initialTab: Int = 0) {
+        _selectedTab = State(initialValue: initialTab)
+    }
 
     public var body: some View {
         TabView(selection: $selectedTab) {
@@ -13,9 +15,9 @@ public struct MainTabView: View {
                 }
                 .tag(0)
 
-            InboxView()
+            DashboardView()
                 .tabItem {
-                    Label("Inbox", systemImage: "tray.fill")
+                    Label("Dashboard", systemImage: "calendar.badge.clock")
                 }
                 .tag(1)
 

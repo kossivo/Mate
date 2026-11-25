@@ -39,6 +39,28 @@ public final class NotificationManager: @unchecked Sendable {
         center.add(request) { _ in }
     }
 
+    /// Schedules a reminder alert for a task at its specified deadline/time.
+    public func scheduleTaskReminder(title: String, reminderDate: Date, id: UUID = UUID()) {
+        guard reminderDate > Date() else { return }
+        let center = UNUserNotificationCenter.current()
+
+        let content = UNMutableNotificationContent()
+        content.title = "Nhắc nhở: \(title)"
+        content.body = "Đã đến giờ hoàn thành: \(title)"
+        content.sound = .default
+
+        let comp = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: reminderDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comp, repeats: false)
+
+        let request = UNNotificationRequest(
+            identifier: "task-\(id.uuidString)",
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request) { _ in }
+    }
+
     /// Sets the app badge count showing remaining incomplete tasks for today.
     public func updateBadgeCount(_ count: Int) {
         if #available(iOS 16.0, macOS 13.0, *) {

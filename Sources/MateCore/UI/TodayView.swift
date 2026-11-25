@@ -20,8 +20,69 @@ public struct TodayView: View {
         initialTasks: [TaskItem] = [],
         initialBlocks: [TimeBlock] = []
     ) {
-        _tasks = State(initialValue: initialTasks)
-        _scheduledBlocks = State(initialValue: initialBlocks)
+        _tasks = State(initialValue: initialTasks.isEmpty ? TodayView.defaultStarterTasks : initialTasks)
+        _scheduledBlocks = State(initialValue: initialBlocks.isEmpty ? TodayView.defaultStarterBlocks : initialBlocks)
+    }
+
+    private static var defaultStarterTasks: [TaskItem] {
+        let now = Date()
+        let cal = Calendar.current
+        let today18 = cal.date(bySettingHour: 18, minute: 0, second: 0, of: now)
+        let tmr10 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 10, minute: 0, second: 0, of: now) ?? now)
+        let friday = cal.date(byAdding: .day, value: 3, to: cal.date(bySettingHour: 17, minute: 0, second: 0, of: now) ?? now)
+
+        return [
+            TaskItem(
+                title: "Hoàn thành slide báo cáo",
+                category: "Work",
+                deadline: today18,
+                estimatedDuration: 60 * 60,
+                priority: .high,
+                status: .planned
+            ),
+            TaskItem(
+                title: "Gọi cho mẹ tối nay",
+                category: "Personal",
+                deadline: cal.date(bySettingHour: 20, minute: 0, second: 0, of: now),
+                estimatedDuration: 15 * 60,
+                priority: .medium,
+                status: .planned
+            ),
+            TaskItem(
+                title: "Gặp thảo luận hợp đồng với Nam",
+                category: "Meeting",
+                deadline: tmr10,
+                estimatedDuration: 45 * 60,
+                priority: .urgent,
+                status: .planned
+            ),
+            TaskItem(
+                title: "Tập thể dục 3 lần tuần này",
+                category: "Health & Routine",
+                deadline: friday,
+                estimatedDuration: 45 * 60,
+                priority: .medium,
+                status: .planned,
+                recurrenceRule: "3x_weekly"
+            )
+        ]
+    }
+
+    private static var defaultStarterBlocks: [TimeBlock] {
+        let now = Date()
+        let cal = Calendar.current
+        let today10 = cal.date(bySettingHour: 10, minute: 0, second: 0, of: now) ?? now
+        let today11 = cal.date(bySettingHour: 11, minute: 0, second: 0, of: now) ?? now
+        let today14 = cal.date(bySettingHour: 14, minute: 0, second: 0, of: now) ?? now
+        let today15 = cal.date(bySettingHour: 15, minute: 0, second: 0, of: now) ?? now
+        let tmr9 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 9, minute: 30, second: 0, of: now) ?? now) ?? now
+        let tmr10 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 10, minute: 30, second: 0, of: now) ?? now) ?? now
+
+        return [
+            TimeBlock(title: "Họp giao ban sáng", startTime: today10, endTime: today11, isLocked: true, category: "Work"),
+            TimeBlock(title: "Đồng bộ tiến độ dự án", startTime: today14, endTime: today15, isLocked: true, category: "Engineering"),
+            TimeBlock(title: "Hẹn cà phê trao đổi đối tác", startTime: tmr9, endTime: tmr10, isLocked: true, category: "Networking")
+        ]
     }
 
     public var body: some View {
@@ -44,11 +105,28 @@ public struct TodayView: View {
                     .padding(.bottom, 16)
             }
             .background(MateTheme.pureBlack.ignoresSafeArea())
-            .sheet(isPresented: $showingCaptureSheet) {
-                UniversalCaptureView { newTask in
-                    tasks.append(newTask)
-                    NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingScannerSheet = true
+                    } label: {
+                        Image(systemName: "doc.viewfinder.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(MateTheme.opticWhite)
+                    }
+                    .accessibilityLabel("Quét lịch trình hoặc ghi chú")
                 }
+            }
+            .sheet(isPresented: $showingCaptureSheet) {
+                UniversalCaptureView(
+                    onSaveTask: { newTask in
+                        tasks.append(newTask)
+                        NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                    },
+                    onSaveEvent: { newEvent in
+                        scheduledBlocks.append(newEvent)
+                    }
+                )
             }
             .sheet(isPresented: $showingPlanSheet) {
                 PlanView(tasks: tasks, existingBlocks: scheduledBlocks) { proposal in
@@ -56,18 +134,23 @@ public struct TodayView: View {
                 }
             }
             .sheet(isPresented: $showingScannerSheet) {
-                DocumentScannerView { scannedTask in
-                    tasks.append(scannedTask)
-                }
+                DocumentScannerView(
+                    onAddContactOrTask: { scannedTask in
+                        tasks.append(scannedTask)
+                    },
+                    onAddEvent: { scannedEvent in
+                        scheduledBlocks.append(scannedEvent)
+                    }
+                )
             }
             .sheet(isPresented: $showingShareAvailabilitySheet) {
                 ShareAvailabilitySheet(message: availabilityMessage)
             }
             .task {
-                await syncWithCalendarAndReminders()
+                await syncWithCalendarAndReminders(promptIfNeeded: false)
             }
             .refreshable {
-                await syncWithCalendarAndReminders()
+                await syncWithCalendarAndReminders(promptIfNeeded: true)
             }
         }
     }
@@ -139,33 +222,21 @@ public struct TodayView: View {
                 .lineSpacing(3)
                 .foregroundStyle(MateTheme.opticWhite.opacity(0.9))
 
-            HStack(spacing: 10) {
-                Button {
-                    generateAvailability()
-                    showingShareAvailabilitySheet = true
-                } label: {
-                    Label("Share Free Time", systemImage: "clock.arrow.2.circlepath")
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(MateTheme.elevatedCard)
-                        .foregroundStyle(MateTheme.opticWhite)
-                        .clipShape(Capsule())
-                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+            Button {
+                generateAvailability()
+                showingShareAvailabilitySheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.2.circlepath")
+                    Text("Share Free Time")
+                        .font(.caption.bold())
                 }
-
-                Button {
-                    showingScannerSheet = true
-                } label: {
-                    Label("Scan Schedule", systemImage: "text.viewfinder")
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(MateTheme.elevatedCard)
-                        .foregroundStyle(MateTheme.opticWhite)
-                        .clipShape(Capsule())
-                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
-                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(MateTheme.elevatedCard)
+                .foregroundStyle(MateTheme.opticWhite)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
             }
         }
         .padding(18)
@@ -387,24 +458,30 @@ public struct TodayView: View {
     }
 
     @MainActor
-    private func syncWithCalendarAndReminders() async {
+    private func syncWithCalendarAndReminders(promptIfNeeded: Bool = false) async {
         let startOfDay = Calendar.current.startOfDay(for: Date())
         guard let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) else { return }
 
-        if let granted = try? await EventKitManager.shared.requestCalendarAccess(), granted {
-            if let events = try? await EventKitManager.shared.fetchEvents(from: startOfDay, to: endOfDay) {
-                let existingTitles = Set(scheduledBlocks.map { $0.title })
-                let newEvents = events.filter { !existingTitles.contains($0.title) }
-                scheduledBlocks.append(contentsOf: newEvents)
+        let isCalAuthorized = EventKitManager.shared.isCalendarAuthorized
+        if isCalAuthorized || promptIfNeeded {
+            if let granted = try? await EventKitManager.shared.requestCalendarAccess(), granted {
+                if let events = try? await EventKitManager.shared.fetchEvents(from: startOfDay, to: endOfDay) {
+                    let existingTitles = Set(scheduledBlocks.map { $0.title })
+                    let newEvents = events.filter { !existingTitles.contains($0.title) }
+                    scheduledBlocks.append(contentsOf: newEvents)
+                }
             }
         }
 
-        if let grantedReminders = try? await EventKitManager.shared.requestRemindersAccess(), grantedReminders {
-            if let reminders = try? await EventKitManager.shared.fetchReminders() {
-                let taskTitles = Set(tasks.map { $0.title })
-                let newTasks = reminders.filter { !taskTitles.contains($0.title) }
-                tasks.append(contentsOf: newTasks)
-                NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+        let isRemAuthorized = EventKitManager.shared.isRemindersAuthorized
+        if isRemAuthorized || promptIfNeeded {
+            if let grantedReminders = try? await EventKitManager.shared.requestRemindersAccess(), grantedReminders {
+                if let reminders = try? await EventKitManager.shared.fetchReminders() {
+                    let taskTitles = Set(tasks.map { $0.title })
+                    let newTasks = reminders.filter { !taskTitles.contains($0.title) }
+                    tasks.append(contentsOf: newTasks)
+                    NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                }
             }
         }
     }
@@ -474,25 +551,46 @@ public struct ShareAvailabilitySheet: View {
 
                 Spacer()
 
-                Button {
-                    #if canImport(UIKit)
-                    UIPasteboard.general.string = message
-                    #elseif canImport(AppKit)
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(message, forType: .string)
-                    #endif
-                    withAnimation { copied = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        dismiss()
-                    }
-                } label: {
-                    Label(copied ? "Copied to Clipboard!" : "Copy Invitation Message", systemImage: copied ? "checkmark" : "doc.on.doc")
-                        .font(.headline)
+                VStack(spacing: 12) {
+                    ShareLink(item: message) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Chia sẻ qua Tin nhắn / Ứng dụng")
+                                .font(.headline)
+                        }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(copied ? Color.green : Color.white)
-                        .foregroundStyle(copied ? Color.white : Color.black)
+                        .background(MateTheme.opticWhite)
+                        .foregroundStyle(MateTheme.pureBlack)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+
+                    Button {
+                        #if canImport(UIKit)
+                        UIPasteboard.general.string = message
+                        #elseif canImport(AppKit)
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(message, forType: .string)
+                        #endif
+                        withAnimation { copied = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            dismiss()
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                            Text(copied ? "Đã sao chép vào Clipboard!" : "Sao chép tin nhắn hẹn")
+                                .font(.subheadline.bold())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(copied ? Color.green : MateTheme.elevatedCard)
+                        .foregroundStyle(copied ? Color.white : MateTheme.silverMuted)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
+                        )
+                    }
                 }
                 .padding(.horizontal)
                 .padding(.bottom)

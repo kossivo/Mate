@@ -118,5 +118,28 @@ struct DeterministicCaptureParserTests {
         #expect(minute == 30)
         #expect(deadline > refDate) // Must not be overdue!
         #expect(item.category == "Meeting")
+        #expect(item.itemType == .event)
+    }
+
+    @Test func testEventVsTaskItemTypeDetection() {
+        let parser = DeterministicCaptureParser()
+
+        // Event: hẹn, họp, meeting
+        let eventResults = parser.parse(text: "Mai hẹn lúc 8.30 gặp Nam")
+        #expect(!eventResults.isEmpty)
+        #expect(eventResults[0].itemType == .event)
+
+        let meetingResults = parser.parse(text: "Họp dự án lúc 14h")
+        #expect(!meetingResults.isEmpty)
+        #expect(meetingResults[0].itemType == .event)
+
+        // Task: nhắc, mua, hoàn thành
+        let taskResults = parser.parse(text: "Nhắc mua sữa lúc 18h tối nay")
+        #expect(!taskResults.isEmpty)
+        #expect(taskResults[0].itemType == .task)
+
+        let reportResults = parser.parse(text: "Hoàn thành báo cáo trước 17h")
+        #expect(!reportResults.isEmpty)
+        #expect(reportResults[0].itemType == .task)
     }
 }

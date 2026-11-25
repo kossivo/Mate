@@ -18,6 +18,24 @@ public final class EventKitManager: EventKitManaging, @unchecked Sendable {
         self.eventStore = eventStore
     }
 
+    public var isCalendarAuthorized: Bool {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        if #available(iOS 17.0, macOS 14.0, *) {
+            return status == .fullAccess || status == .authorized
+        } else {
+            return status == .authorized
+        }
+    }
+
+    public var isRemindersAuthorized: Bool {
+        let status = EKEventStore.authorizationStatus(for: .reminder)
+        if #available(iOS 17.0, macOS 14.0, *) {
+            return status == .fullAccess || status == .authorized
+        } else {
+            return status == .authorized
+        }
+    }
+
     public func requestCalendarAccess() async throws -> Bool {
         if #available(iOS 17.0, macOS 14.0, *) {
             return try await eventStore.requestFullAccessToEvents()
