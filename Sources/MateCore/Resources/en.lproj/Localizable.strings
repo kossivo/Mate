@@ -1,0 +1,22 @@
+/* English Localizable.strings */
+"APP_NAME" = "Mate";
+"TODAY_OVERVIEW" = "Today's Overview";
+"TOP_PRIORITIES" = "Top Priorities";
+"SCHEDULED_TIMELINE" = "Scheduled Timeline";
+"PLAN_MY_DAY" = "Plan My Day";
+"QUICK_CAPTURE" = "Quick Capture";
+"NEXT_UP" = "Next Up";
+"LOCKED_CALENDAR_EVENT" = "Locked Calendar Event";
+"WHAT_ON_YOUR_MIND" = "What's on your mind?";
+"RECOGNIZED_TASKS" = "Recognized Tasks";
+"AMBIGUOUS_DETAILS" = "Ambiguous details — placed in Inbox for review";
+"APPLY_SYNC_SCHEDULE" = "Apply & Sync Schedule";
+"SETTINGS" = "Settings";
+"WORKING_HOURS" = "Working Hours";
+"INTEGRATIONS" = "Integrations";
+"DATA_PRIVACY" = "Data & Privacy";
+"UNLOCK_MATE_PRO" = "Unlock Mate Pro";
+"START_FREE_TRIAL" = "Start 7-Day Free Trial";
+"RESTORE_PURCHASES" = "Restore Purchases";
+"TERMS_OF_SERVICE" = "Terms of Service";
+"PRIVACY_POLICY" = "Privacy Policy";

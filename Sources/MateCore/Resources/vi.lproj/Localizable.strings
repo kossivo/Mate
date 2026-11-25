@@ -1,0 +1,22 @@
+/* Vietnamese Localizable.strings */
+"APP_NAME" = "Mate";
+"TODAY_OVERVIEW" = "Tổng quan hôm nay";
+"TOP_PRIORITIES" = "Ưu tiên hàng đầu";
+"SCHEDULED_TIMELINE" = "Lịch trình đã xếp";
+"PLAN_MY_DAY" = "Lên lịch hôm nay";
+"QUICK_CAPTURE" = "Ghi nhanh";
+"NEXT_UP" = "Kế tiếp";
+"LOCKED_CALENDAR_EVENT" = "Sự kiện lịch cố định";
+"WHAT_ON_YOUR_MIND" = "Bạn đang nghĩ gì?";
+"RECOGNIZED_TASKS" = "Nhiệm vụ nhận diện được";
+"AMBIGUOUS_DETAILS" = "Thông tin chưa rõ — chuyển vào Hộp thư đến";
+"APPLY_SYNC_SCHEDULE" = "Áp dụng & Đồng bộ lịch";
+"SETTINGS" = "Cài đặt";
+"WORKING_HOURS" = "Giờ làm việc";
+"INTEGRATIONS" = "Tích hợp";
+"DATA_PRIVACY" = "Dữ liệu & Quyền riêng tư";
+"UNLOCK_MATE_PRO" = "Nâng cấp Mate Pro";
+"START_FREE_TRIAL" = "Dùng thử miễn phí 7 ngày";
+"RESTORE_PURCHASES" = "Khôi phục gói mua";
+"TERMS_OF_SERVICE" = "Điều khoản dịch vụ";
+"PRIVACY_POLICY" = "Chính sách bảo mật";
