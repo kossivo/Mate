@@ -31,7 +31,10 @@ let package = Package(
         .executableTarget(
             name: "MateApp",
             dependencies: ["MateCore"],
-            path: "Sources/MateApp"
+            path: "Sources/MateApp",
+            resources: [
+                .process("Assets.xcassets")
+            ]
         ),
         .testTarget(
             name: "MateCoreTests",
