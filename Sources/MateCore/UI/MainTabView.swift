@@ -29,32 +29,47 @@ public struct MainTabView: View {
 }
 
 public struct InboxView: View {
-    @State private var inboxTasks: [TaskItem] = [
-        TaskItem(title: "Confirm dentist appointment", estimatedDuration: 900, priority: .medium, status: .inbox),
-        TaskItem(title: "Research flights to Tokyo", estimatedDuration: 1800, priority: .low, status: .inbox)
-    ]
+    @State private var inboxTasks: [TaskItem] = []
 
     public init() {}
 
     public var body: some View {
         NavigationStack {
-            List {
-                Section("Unscheduled & Ambiguous Items") {
-                    ForEach(inboxTasks) { task in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(task.title)
-                                .font(.body.bold())
-                            HStack {
-                                Label("\(Int(task.estimatedDuration / 60)) mins", systemImage: "clock")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Text("Needs review")
-                                    .font(.caption2.bold())
-                                    .foregroundStyle(.orange)
+            Group {
+                if inboxTasks.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "tray")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.secondary)
+                        Text("Inbox Zero")
+                            .font(.headline)
+                        Text("Tasks that require further review or lack a clear deadline will appear here.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        Section("Unscheduled & Ambiguous Items") {
+                            ForEach(inboxTasks) { task in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(task.title)
+                                        .font(.body.bold())
+                                    HStack {
+                                        Label("\(Int(task.estimatedDuration / 60)) mins", systemImage: "clock")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        Text("Needs review")
+                                            .font(.caption2.bold())
+                                            .foregroundStyle(.orange)
+                                    }
+                                }
+                                .padding(.vertical, 4)
                             }
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }

@@ -87,4 +87,36 @@ struct DeterministicCaptureParserTests {
         #expect(hour == 15)
         #expect(min == 30)
     }
+
+    @Test func testTomorrowAppointmentWithDotTime() {
+        let parser = DeterministicCaptureParser()
+        // Wednesday Nov 25, 2026 at 18:00 (after 8:30)
+        var comp = DateComponents()
+        comp.year = 2026
+        comp.month = 11
+        comp.day = 25
+        comp.hour = 18
+        comp.minute = 0
+        let calendar = Calendar(identifier: .gregorian)
+        let refDate = calendar.date(from: comp)!
+
+        let input = "Mai hẹn lúc 8.30"
+        let results = parser.parse(text: input, referenceDate: refDate)
+
+        #expect(results.count == 1)
+        let item = results[0]
+        #expect(item.deadline != nil)
+        guard let deadline = item.deadline else { return }
+
+        // Must be tomorrow (Nov 26, 2026), NOT today (Nov 25), and hour 8, min 30
+        let day = calendar.component(.day, from: deadline)
+        let hour = calendar.component(.hour, from: deadline)
+        let minute = calendar.component(.minute, from: deadline)
+
+        #expect(day == 26)
+        #expect(hour == 8)
+        #expect(minute == 30)
+        #expect(deadline > refDate) // Must not be overdue!
+        #expect(item.category == "Meeting")
+    }
 }

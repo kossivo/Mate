@@ -24,7 +24,8 @@ sources = [
     "Sources/MateCore/Widgets/MateWidgets.swift",
     "Sources/MateCore/Assistant/AvailabilityEngine.swift",
     "Sources/MateCore/Assistant/NotificationManager.swift",
-    "Sources/MateCore/Assistant/DocumentScannerView.swift"
+    "Sources/MateCore/Assistant/DocumentScannerView.swift",
+    "Sources/MateCore/Assistant/VoiceDictationManager.swift"
 ]
 
 resources = [
@@ -269,6 +270,9 @@ common_target_settings = """
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Mate reads your calendar to find available focus time and adds your approved scheduled tasks.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Mate accesses your reminders to organize and schedule your to-do items.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Mate uses the camera to scan business cards, schedule agendas, and notes into actionable tasks.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Mate uses the microphone to let you capture tasks and thoughts with voice dictation.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Mate processes speech on-device to understand tasks, dates, and appointments securely.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

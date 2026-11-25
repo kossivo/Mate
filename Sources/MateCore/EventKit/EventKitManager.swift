@@ -5,11 +5,13 @@ public protocol EventKitManaging: Sendable {
     func requestCalendarAccess() async throws -> Bool
     func requestRemindersAccess() async throws -> Bool
     func fetchEvents(from startDate: Date, to endDate: Date) async throws -> [TimeBlock]
+    func fetchReminders() async throws -> [TaskItem]
     func createCalendarEvent(from block: TimeBlock) async throws -> String
     func removeCalendarEvent(externalId: String) async throws -> Bool
 }
 
 public final class EventKitManager: EventKitManaging, @unchecked Sendable {
+    public static let shared = EventKitManager()
     private let eventStore: EKEventStore
 
     public init(eventStore: EKEventStore = EKEventStore()) {
@@ -66,6 +68,45 @@ public final class EventKitManager: EventKitManaging, @unchecked Sendable {
         }
     }
 
+    public func fetchReminders() async throws -> [TaskItem] {
+        let calendars = eventStore.calendars(for: .reminder)
+        let predicate = eventStore.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: calendars)
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            eventStore.fetchReminders(matching: predicate) { reminders in
+                guard let ekReminders = reminders else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                
+                let tasks = ekReminders.map { reminder in
+                    var deadline: Date? = nil
+                    if let components = reminder.dueDateComponents {
+                        deadline = Calendar.current.date(from: components)
+                    }
+                    
+                    var priority: TaskPriority = .medium
+                    if reminder.priority >= 1 && reminder.priority <= 4 {
+                        priority = .high
+                    } else if reminder.priority >= 9 {
+                        priority = .low
+                    }
+                    
+                    return TaskItem(
+                        id: UUID(),
+                        title: reminder.title ?? "Untitled Reminder",
+                        notes: reminder.notes,
+                        category: "Reminders",
+                        deadline: deadline,
+                        priority: priority,
+                        status: reminder.isCompleted ? .completed : .planned
+                    )
+                }
+                continuation.resume(returning: tasks)
+            }
+        }
+    }
+
     public func createCalendarEvent(from block: TimeBlock) async throws -> String {
         let ekEvent = EKEvent(eventStore: eventStore)
         ekEvent.title = block.title
@@ -106,6 +147,12 @@ public final class MockEventKitManager: EventKitManaging, @unchecked Sendable {
 
     public func fetchEvents(from startDate: Date, to endDate: Date) async throws -> [TimeBlock] {
         return stubbedEvents.filter { $0.endTime > startDate && $0.startTime < endDate }
+    }
+
+    public var stubbedReminders: [TaskItem] = []
+
+    public func fetchReminders() async throws -> [TaskItem] {
+        return stubbedReminders
     }
 
     public func createCalendarEvent(from block: TimeBlock) async throws -> String {

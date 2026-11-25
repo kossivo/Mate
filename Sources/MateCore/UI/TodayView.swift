@@ -15,19 +15,8 @@ public struct TodayView: View {
         initialTasks: [TaskItem] = [],
         initialBlocks: [TimeBlock] = []
     ) {
-        let defaultTasks = initialTasks.isEmpty ? [
-            TaskItem(title: "Finish presentation", deadline: Date().addingTimeInterval(14400), priority: .high, status: .planned),
-            TaskItem(title: "Call Mum", deadline: Date().addingTimeInterval(28800), estimatedDuration: 900, priority: .medium, status: .planned),
-            TaskItem(title: "Gym session", estimatedDuration: 2700, priority: .low, status: .planned)
-        ] : initialTasks
-
-        let defaultBlocks = initialBlocks.isEmpty ? [
-            TimeBlock(title: "Client Standup", startTime: Date(), endTime: Date().addingTimeInterval(1800), isLocked: true, category: "Calendar"),
-            TimeBlock(title: "Focus: Finish presentation", startTime: Date().addingTimeInterval(3600), endTime: Date().addingTimeInterval(7200), category: "Work")
-        ] : initialBlocks
-
-        _tasks = State(initialValue: defaultTasks)
-        _scheduledBlocks = State(initialValue: defaultBlocks)
+        _tasks = State(initialValue: initialTasks)
+        _scheduledBlocks = State(initialValue: initialBlocks)
     }
 
     public var body: some View {
@@ -137,39 +126,53 @@ public struct TodayView: View {
                             Spacer()
                         }
 
-                        ForEach($tasks) { $task in
-                            HStack(spacing: 12) {
-                                Button {
-                                    withAnimation(.spring(response: 0.3)) {
-                                        task.status = (task.status == .completed) ? .planned : .completed
-                                        NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
-                                    }
-                                } label: {
-                                    Image(systemName: task.status == .completed ? "checkmark.circle.fill" : "circle")
-                                        .font(.title3)
-                                        .foregroundStyle(task.status == .completed ? .green : .secondary)
-                                }
-                                .buttonStyle(.plain)
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(task.title)
-                                        .font(.body)
-                                        .strikethrough(task.status == .completed)
-                                        .foregroundStyle(task.status == .completed ? .secondary : .primary)
-                                    if let deadline = task.deadline {
-                                        Text("Due " + deadline.formatted(date: .omitted, time: .shortened))
-                                            .font(.caption2)
-                                            .foregroundStyle(.red)
-                                    }
-                                }
-                                Spacer()
-                                Circle()
-                                    .fill(MateTheme.priorityColor(task.priority))
-                                    .frame(width: 8, height: 8)
+                        if tasks.isEmpty {
+                            HStack {
+                                Image(systemName: "checkmark.circle")
+                                    .foregroundStyle(.secondary)
+                                Text("No pending tasks for today. Tap Quick Capture (+) to add one.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
                             .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .background(MateTheme.secondaryBackground)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
+                        } else {
+                            ForEach($tasks) { $task in
+                                HStack(spacing: 12) {
+                                    Button {
+                                        withAnimation(.spring(response: 0.3)) {
+                                            task.status = (task.status == .completed) ? .planned : .completed
+                                            NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                                        }
+                                    } label: {
+                                        Image(systemName: task.status == .completed ? "checkmark.circle.fill" : "circle")
+                                            .font(.title3)
+                                            .foregroundStyle(task.status == .completed ? .green : .secondary)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(task.title)
+                                            .font(.body)
+                                            .strikethrough(task.status == .completed)
+                                            .foregroundStyle(task.status == .completed ? .secondary : .primary)
+                                        if let deadline = task.deadline {
+                                            Text("Due " + deadline.formatted(date: .omitted, time: .shortened))
+                                                .font(.caption2)
+                                                .foregroundStyle(.red)
+                                        }
+                                    }
+                                    Spacer()
+                                    Circle()
+                                        .fill(MateTheme.priorityColor(task.priority))
+                                        .frame(width: 8, height: 8)
+                                }
+                                .padding()
+                                .background(MateTheme.secondaryBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -180,38 +183,54 @@ public struct TodayView: View {
                             Text("Scheduled Timeline")
                                 .font(.headline)
                             Spacer()
-                            Button("Plan My Day") {
-                                showingPlanSheet = true
+                            if !scheduledBlocks.isEmpty {
+                                Button("Plan My Day") {
+                                    showingPlanSheet = true
+                                }
+                                .font(.caption.bold())
                             }
-                            .font(.caption.bold())
                         }
 
-                        ForEach(scheduledBlocks) { block in
-                            HStack(spacing: 16) {
-                                VStack(alignment: .trailing, spacing: 2) {
-                                    Text(block.startTime.formatted(date: .omitted, time: .shortened))
-                                        .font(.caption.bold())
-                                    Text(block.endTime.formatted(date: .omitted, time: .shortened))
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(width: 60, alignment: .trailing)
-
-                                Rectangle()
-                                    .fill(block.isLocked ? Color.purple : Color.blue)
-                                    .frame(width: 3)
-                                    .clipShape(Capsule())
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(block.title)
-                                        .font(.subheadline.bold())
-                                    Text("\(Int(block.duration / 60)) mins")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
+                        if scheduledBlocks.isEmpty {
+                            HStack {
+                                Image(systemName: "calendar.badge.clock")
+                                    .foregroundStyle(.secondary)
+                                Text("No calendar events today. Focus time is open.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
-                            .padding(.vertical, 4)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(MateTheme.secondaryBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        } else {
+                            ForEach(scheduledBlocks) { block in
+                                HStack(spacing: 16) {
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        Text(block.startTime.formatted(date: .omitted, time: .shortened))
+                                            .font(.caption.bold())
+                                        Text(block.endTime.formatted(date: .omitted, time: .shortened))
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(width: 60, alignment: .trailing)
+
+                                    Rectangle()
+                                        .fill(block.isLocked ? Color.purple : Color.blue)
+                                        .frame(width: 3)
+                                        .clipShape(Capsule())
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(block.title)
+                                            .font(.subheadline.bold())
+                                        Text("\(Int(block.duration / 60)) mins")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.vertical, 4)
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -247,6 +266,35 @@ public struct TodayView: View {
             }
             .sheet(isPresented: $showingShareAvailabilitySheet) {
                 ShareAvailabilitySheet(message: availabilityMessage)
+            }
+            .task {
+                await syncWithCalendarAndReminders()
+            }
+            .refreshable {
+                await syncWithCalendarAndReminders()
+            }
+        }
+    }
+
+    @MainActor
+    private func syncWithCalendarAndReminders() async {
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        guard let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) else { return }
+
+        if let granted = try? await EventKitManager.shared.requestCalendarAccess(), granted {
+            if let events = try? await EventKitManager.shared.fetchEvents(from: startOfDay, to: endOfDay) {
+                let existingTitles = Set(scheduledBlocks.map { $0.title })
+                let newEvents = events.filter { !existingTitles.contains($0.title) }
+                scheduledBlocks.append(contentsOf: newEvents)
+            }
+        }
+
+        if let grantedReminders = try? await EventKitManager.shared.requestRemindersAccess(), grantedReminders {
+            if let reminders = try? await EventKitManager.shared.fetchReminders() {
+                let taskTitles = Set(tasks.map { $0.title })
+                let newTasks = reminders.filter { !taskTitles.contains($0.title) }
+                tasks.append(contentsOf: newTasks)
+                NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
             }
         }
     }

@@ -11,6 +11,7 @@ public struct ParsedCaptureItem: Sendable, Equatable {
     public var recurrence: String?
     public var isAmbiguous: Bool
     public var ambiguityNotes: [String]
+    public var calendarConflict: String?
 
     public init(
         rawText: String,
@@ -21,7 +22,8 @@ public struct ParsedCaptureItem: Sendable, Equatable {
         category: String? = nil,
         recurrence: String? = nil,
         isAmbiguous: Bool = false,
-        ambiguityNotes: [String] = []
+        ambiguityNotes: [String] = [],
+        calendarConflict: String? = nil
     ) {
         self.rawText = rawText
         self.title = title
@@ -32,6 +34,7 @@ public struct ParsedCaptureItem: Sendable, Equatable {
         self.recurrence = recurrence
         self.isAmbiguous = isAmbiguous
         self.ambiguityNotes = ambiguityNotes
+        self.calendarConflict = calendarConflict
     }
 }
 
@@ -107,61 +110,89 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             cleanClause = cleanClause.replacingOccurrences(of: "(?i)every day|daily|hàng ngày|mỗi ngày", with: "", options: .regularExpression)
         }
 
-        // 2. Deadlines (Exact time or day)
-        // Check for specific hour regex: "lúc 14h30", "lúc 15:00", "at 3pm", "lúc 9h"
-        if let timeMatch = extractTimeComponents(from: lowercased, referenceDate: referenceDate) {
-            deadline = timeMatch.date
-            cleanClause = cleanClause.replacingOccurrences(of: timeMatch.matchedString, with: "", options: .caseInsensitive)
+        // 2. Relative Day / Target Date Detection
+        var targetBaseDate: Date? = nil
+        var dateDefaultHour: Int = 9
+        var dateDefaultMinute: Int = 0
+
+        if lowercased.contains("tonight") || lowercased.contains("tối nay") {
+            targetBaseDate = referenceDate
+            dateDefaultHour = 20
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)tonight|tối nay", with: "", options: .regularExpression)
+        } else if lowercased.contains("sáng mai") || lowercased.contains("tomorrow morning") {
+            targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
+            dateDefaultHour = 9
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow morning|sáng mai", with: "", options: .regularExpression)
+        } else if lowercased.contains("chiều mai") || lowercased.contains("tomorrow afternoon") {
+            targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
+            dateDefaultHour = 14
+            dateDefaultMinute = 30
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow afternoon|chiều mai", with: "", options: .regularExpression)
+        } else if lowercased.contains("tối mai") || lowercased.contains("tomorrow evening") {
+            targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
+            dateDefaultHour = 20
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow evening|tối mai", with: "", options: .regularExpression)
+        } else if lowercased.contains("tomorrow") || lowercased.contains("ngày mai") || lowercased.contains("mai") {
+            targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
+            dateDefaultHour = 9
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow|ngày mai|\\bmai\\b", with: "", options: .regularExpression)
+        } else if lowercased.contains("today") || lowercased.contains("hôm nay") {
+            targetBaseDate = referenceDate
+            dateDefaultHour = 18
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)today|hôm nay", with: "", options: .regularExpression)
+        } else if lowercased.contains("thứ hai") || lowercased.contains("thứ 2") || lowercased.contains("monday") {
+            targetBaseDate = dateForNextWeekday(weekday: 2, from: referenceDate)
+            dateDefaultHour = 17
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)monday|thứ hai|thứ 2", with: "", options: .regularExpression)
+        } else if lowercased.contains("thứ ba") || lowercased.contains("thứ 3") || lowercased.contains("tuesday") {
+            targetBaseDate = dateForNextWeekday(weekday: 3, from: referenceDate)
+            dateDefaultHour = 17
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)tuesday|thứ ba|thứ 3", with: "", options: .regularExpression)
+        } else if lowercased.contains("thứ tư") || lowercased.contains("thứ 4") || lowercased.contains("wednesday") {
+            targetBaseDate = dateForNextWeekday(weekday: 4, from: referenceDate)
+            dateDefaultHour = 17
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)wednesday|thứ tư|thứ 4", with: "", options: .regularExpression)
+        } else if lowercased.contains("thứ năm") || lowercased.contains("thứ 5") || lowercased.contains("thursday") {
+            targetBaseDate = dateForNextWeekday(weekday: 5, from: referenceDate)
+            dateDefaultHour = 17
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)thursday|thứ năm|thứ 5", with: "", options: .regularExpression)
+        } else if lowercased.contains("thứ sáu") || lowercased.contains("thứ 6") || lowercased.contains("friday") {
+            targetBaseDate = dateForNextWeekday(weekday: 6, from: referenceDate)
+            dateDefaultHour = 17
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)friday|thứ sáu|thứ 6|by friday|trước thứ 6|trước thứ sáu", with: "", options: .regularExpression)
+        } else if lowercased.contains("thứ bảy") || lowercased.contains("thứ 7") || lowercased.contains("saturday") {
+            targetBaseDate = dateForNextWeekday(weekday: 7, from: referenceDate)
+            dateDefaultHour = 17
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)saturday|thứ bảy|thứ 7", with: "", options: .regularExpression)
+        } else if lowercased.contains("chủ nhật") || lowercased.contains("sunday") {
+            targetBaseDate = dateForNextWeekday(weekday: 1, from: referenceDate)
+            dateDefaultHour = 17
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)sunday|chủ nhật", with: "", options: .regularExpression)
         }
 
-        // Relative days in English & Vietnamese
-        if deadline == nil {
-            if lowercased.contains("tonight") || lowercased.contains("tối nay") {
-                deadline = dateForTonight(from: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)tonight|tối nay", with: "", options: .regularExpression)
-            } else if lowercased.contains("sáng mai") || lowercased.contains("tomorrow morning") {
-                let tomorrow = calendar.date(byAdding: .day, value: 1, to: referenceDate) ?? referenceDate
-                deadline = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow morning|sáng mai", with: "", options: .regularExpression)
-            } else if lowercased.contains("chiều mai") || lowercased.contains("tomorrow afternoon") {
-                let tomorrow = calendar.date(byAdding: .day, value: 1, to: referenceDate) ?? referenceDate
-                deadline = calendar.date(bySettingHour: 14, minute: 30, second: 0, of: tomorrow)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow afternoon|chiều mai", with: "", options: .regularExpression)
-            } else if lowercased.contains("tối mai") || lowercased.contains("tomorrow evening") {
-                let tomorrow = calendar.date(byAdding: .day, value: 1, to: referenceDate) ?? referenceDate
-                deadline = calendar.date(bySettingHour: 20, minute: 0, second: 0, of: tomorrow)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow evening|tối mai", with: "", options: .regularExpression)
-            } else if lowercased.contains("tomorrow") || lowercased.contains("ngày mai") || lowercased.contains("mai") {
-                deadline = calendar.date(byAdding: .day, value: 1, to: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow|ngày mai|\\bmai\\b", with: "", options: .regularExpression)
-            } else if lowercased.contains("today") || lowercased.contains("hôm nay") {
-                deadline = calendar.date(bySettingHour: 18, minute: 0, second: 0, of: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)today|hôm nay", with: "", options: .regularExpression)
-            } else if lowercased.contains("thứ hai") || lowercased.contains("thứ 2") || lowercased.contains("monday") {
-                deadline = dateForNextWeekday(weekday: 2, from: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)monday|thứ hai|thứ 2", with: "", options: .regularExpression)
-            } else if lowercased.contains("thứ ba") || lowercased.contains("thứ 3") || lowercased.contains("tuesday") {
-                deadline = dateForNextWeekday(weekday: 3, from: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)tuesday|thứ ba|thứ 3", with: "", options: .regularExpression)
-            } else if lowercased.contains("thứ tư") || lowercased.contains("thứ 4") || lowercased.contains("wednesday") {
-                deadline = dateForNextWeekday(weekday: 4, from: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)wednesday|thứ tư|thứ 4", with: "", options: .regularExpression)
-            } else if lowercased.contains("thứ năm") || lowercased.contains("thứ 5") || lowercased.contains("thursday") {
-                deadline = dateForNextWeekday(weekday: 5, from: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)thursday|thứ năm|thứ 5", with: "", options: .regularExpression)
-            } else if lowercased.contains("thứ sáu") || lowercased.contains("thứ 6") || lowercased.contains("friday") {
-                deadline = dateForNextWeekday(weekday: 6, from: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)friday|thứ sáu|thứ 6|by friday|trước thứ 6|trước thứ sáu", with: "", options: .regularExpression)
-            } else if lowercased.contains("thứ bảy") || lowercased.contains("thứ 7") || lowercased.contains("saturday") {
-                deadline = dateForNextWeekday(weekday: 7, from: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)saturday|thứ bảy|thứ 7", with: "", options: .regularExpression)
-            } else if lowercased.contains("chủ nhật") || lowercased.contains("sunday") {
-                deadline = dateForNextWeekday(weekday: 1, from: referenceDate)
-                cleanClause = cleanClause.replacingOccurrences(of: "(?i)sunday|chủ nhật", with: "", options: .regularExpression)
+        // 3. Exact Time Extraction
+        if let timeMatch = extractTimeValues(from: cleanClause) {
+            let base = targetBaseDate ?? referenceDate
+            var components = calendar.dateComponents([.year, .month, .day], from: base)
+            components.hour = timeMatch.hour
+            components.minute = timeMatch.minute
+            components.second = 0
+
+            var resolvedDate = calendar.date(from: components) ?? base
+            if targetBaseDate == nil && resolvedDate < referenceDate {
+                resolvedDate = calendar.date(byAdding: .day, value: 1, to: resolvedDate) ?? resolvedDate
             }
+            deadline = resolvedDate
+            cleanClause = cleanClause.replacingOccurrences(of: timeMatch.matchedString, with: "", options: .caseInsensitive)
+        } else if let base = targetBaseDate {
+            var components = calendar.dateComponents([.year, .month, .day], from: base)
+            components.hour = dateDefaultHour
+            components.minute = dateDefaultMinute
+            components.second = 0
+            deadline = calendar.date(from: components) ?? base
         }
 
-        // 3. Priority
+        // 4. Priority
         if lowercased.contains("urgent") || lowercased.contains("asap") || lowercased.contains("critical") ||
            lowercased.contains("gấp") || lowercased.contains("khẩn cấp") {
             priority = .urgent
@@ -171,8 +202,12 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             cleanClause = cleanClause.replacingOccurrences(of: "(?i)important|high priority|quan trọng", with: "", options: .regularExpression)
         }
 
-        // 4. Duration & Category inferences
-        if lowercased.contains("presentation") || lowercased.contains("slide") || lowercased.contains("báo cáo") || lowercased.contains("report") {
+        // 5. Category & Duration Inferences
+        if lowercased.contains("hẹn") || lowercased.contains("cuộc hẹn") || lowercased.contains("gặp") ||
+           lowercased.contains("meeting") || lowercased.contains("meet") || lowercased.contains("appointment") {
+            duration = 30 * 60
+            category = category ?? "Meeting"
+        } else if lowercased.contains("presentation") || lowercased.contains("slide") || lowercased.contains("báo cáo") || lowercased.contains("report") {
             duration = 60 * 60
             category = category ?? "Work"
         } else if lowercased.contains("call ") || lowercased.contains("gọi cho") || lowercased.contains("gọi điện") {
@@ -181,9 +216,6 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
         } else if lowercased.contains("exercise") || lowercased.contains("workout") || lowercased.contains("tập thể dục") || lowercased.contains("gym") || lowercased.contains("chạy bộ") {
             duration = 45 * 60
             category = category ?? "Health"
-        } else if lowercased.contains("họp") || lowercased.contains("meeting") || lowercased.contains("sync") {
-            duration = 30 * 60
-            category = category ?? "Work"
         } else if lowercased.contains("cà phê") || lowercased.contains("coffee") || lowercased.contains("ăn trưa") || lowercased.contains("lunch") {
             duration = 45 * 60
             category = category ?? "Social"
@@ -195,10 +227,14 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             ambiguityNotes.append("Chưa rõ hạn chót — chuyển vào Hộp thư để bạn xác nhận.")
         }
 
-        let cleanedTitle = cleanClause
+        var cleanedTitle = cleanClause
             .replacingOccurrences(of: "^[\\s,]+", with: "", options: .regularExpression)
             .replacingOccurrences(of: "[\\s,]+$", with: "", options: .regularExpression)
             .capitalizedFirstLetter()
+
+        if cleanedTitle.isEmpty || cleanedTitle.lowercased() == "hẹn" {
+            cleanedTitle = (category == "Meeting") ? "Cuộc hẹn" : "Nhiệm vụ mới"
+        }
 
         return ParsedCaptureItem(
             rawText: clause,
@@ -213,9 +249,42 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
         )
     }
 
-    private func extractTimeComponents(from text: String, referenceDate: Date) -> (date: Date, matchedString: String)? {
-        // Match patterns like: "lúc 15:30", "lúc 15h30", "lúc 9h", "at 14:00", "at 3pm"
-        let pattern = "(?:lúc|at)\\s+(\\d{1,2})(?:[:h](\\d{2}))?\\s*(am|pm)?"
+    private struct ExtractedTime {
+        let hour: Int
+        let minute: Int
+        let matchedString: String
+    }
+
+    private func extractTimeValues(from text: String) -> ExtractedTime? {
+        // Pattern 1: With prefix "lúc", "vào lúc", "at", "vào"
+        // e.g. "lúc 8.30", "lúc 8:30", "lúc 14h30", "at 3pm", "lúc 9h"
+        let patternPrefixed = "(?:vào lúc|lúc|at|vào)\\s+(\\d{1,2})(?:[:.h](\\d{2}))?\\s*(am|pm)?"
+        if let match = matchTime(pattern: patternPrefixed, text: text) {
+            return match
+        }
+
+        // Pattern 2: Standalone format with separator e.g. "8.30", "15:45", "9h30"
+        let patternSeparated = "\\b(\\d{1,2})[:.h](\\d{2})\\s*(am|pm)?\\b"
+        if let match = matchTime(pattern: patternSeparated, text: text) {
+            return match
+        }
+
+        // Pattern 3: Standalone hour with h e.g. "9h", "15h"
+        let patternHourH = "\\b(\\d{1,2})h\\b"
+        if let match = matchTime(pattern: patternHourH, text: text) {
+            return match
+        }
+
+        // Pattern 4: Standalone hour with am/pm e.g. "9am", "3pm"
+        let patternAmPm = "\\b(\\d{1,2})\\s*(am|pm)\\b"
+        if let match = matchTime(pattern: patternAmPm, text: text) {
+            return match
+        }
+
+        return nil
+    }
+
+    private func matchTime(pattern: String, text: String) -> ExtractedTime? {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
               let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) else {
             return nil
@@ -228,13 +297,13 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
         }
 
         var minute = 0
-        if match.range(at: 2).location != NSNotFound,
+        if match.numberOfRanges > 2 && match.range(at: 2).location != NSNotFound,
            let minRange = Range(match.range(at: 2), in: text),
            let minVal = Int(text[minRange]) {
             minute = minVal
         }
 
-        if match.range(at: 3).location != NSNotFound,
+        if match.numberOfRanges > 3 && match.range(at: 3).location != NSNotFound,
            let ampmRange = Range(match.range(at: 3), in: text) {
             let ampm = text[ampmRange].lowercased()
             if ampm == "pm" && hour < 12 {
@@ -244,12 +313,7 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             }
         }
 
-        var components = calendar.dateComponents([.year, .month, .day], from: referenceDate)
-        components.hour = hour
-        components.minute = minute
-        components.second = 0
-        let date = calendar.date(from: components) ?? referenceDate
-        return (date, matchedString)
+        return ExtractedTime(hour: hour, minute: minute, matchedString: matchedString)
     }
 
     private func dateForTonight(from date: Date) -> Date {
