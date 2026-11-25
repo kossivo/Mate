@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mate — Privacy Policy & Terms of Service</title>
+    <style>
+        :root {
+            --bg: #0c0d0e;
+            --card-bg: #16181a;
+            --text-primary: #f2f4f6;
+            --text-secondary: #9da4ad;
+            --accent: #2997ff;
+            --border: #24272b;
+        }
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #f5f6f8;
+                --card-bg: #ffffff;
+                --text-primary: #1d1d1f;
+                --text-secondary: #6e6e73;
+                --accent: #0071e3;
+                --border: #e5e5e7;
+            }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            font-weight: 700;
+            font-size: 24px;
+            width: 56px;
+            height: 56px;
+            line-height: 56px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 8px;
+        }
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 32px 0 24px;
+        }
+        .tab-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 20px;
+            margin-top: 24px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        h2:first-of-type {
+            margin-top: 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-badge">M</div>
+            <h1>Mate: Personal Productivity Assistant</h1>
+            <p class="subtitle">Legal Policies & Customer Disclosures</p>
+            <div class="nav-tabs">
+                <button class="tab-btn active" onclick="showTab('privacy')">Privacy Policy</button>
+                <button class="tab-btn" onclick="showTab('terms')">Terms of Service</button>
+            </div>
+        </header>
+
+        <!-- Privacy Section -->
+        <div id="privacy-section" class="card">
+            <h2>Privacy Policy</h2>
+            <p><strong>Effective Date:</strong> November 25, 2026</p>
+            <p>At <strong>Mate</strong>, your privacy is our core promise. Mate is engineered as a 100% on-device, local-first productivity assistant. We believe your schedules, thoughts, and calendar commitments belong exclusively to you.</p>
+
+            <h2>1. Zero Telemetry & On-Device Processing</h2>
+            <ul>
+                <li><strong>Local-First:</strong> All natural language parsing, scheduling algorithms, and time calculations run strictly on your device CPU/Neural Engine.</li>
+                <li><strong>No External AI APIs:</strong> We do not transmit your thoughts or tasks to OpenAI, Google Cloud, Anthropic, or any third-party server.</li>
+                <li><strong>No Tracking:</strong> Mate contains zero tracking code, advertising SDKs, or analytics trackers.</li>
+            </ul>
+
+            <h2>2. Apple Calendar & Reminders</h2>
+            <ul>
+                <li>Mate reads calendar events strictly in-memory to detect available focus slots.</li>
+                <li>Mate never alters or adds events without your explicit confirmation.</li>
+            </ul>
+
+            <h2>3. Private iCloud Sync</h2>
+            <p>If enabled, your data syncs exclusively via <strong>Apple's Private CloudKit Database</strong>. The developers of Mate cannot see, decrypt, or access your data.</p>
+        </div>
+
+        <!-- Terms Section -->
+        <div id="terms-section" class="card" style="display:none;">
+            <h2>Terms of Service</h2>
+            <p><strong>Effective Date:</strong> November 25, 2026</p>
+            <p>By using Mate, you agree to these Terms and Apple's Standard EULA.</p>
+
+            <h2>1. Subscriptions & Billing</h2>
+            <ul>
+                <li><strong>Monthly Subscription:</strong> $1.99 / month</li>
+                <li><strong>Annual Subscription:</strong> $9.99 / year (includes 7-day free trial where offered)</li>
+                <li>Payment is charged to your Apple ID upon purchase or trial expiration. Subscriptions automatically renew unless canceled at least 24 hours prior to the current billing period in your Apple ID Settings.</li>
+            </ul>
+
+            <h2>2. Cancellation</h2>
+            <p>You may cancel subscriptions at any time via <strong>Settings &gt; Apple ID &gt; Subscriptions</strong> on your Apple device.</p>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 Mate. All rights reserved. <br> Built for iOS & macOS.</p>
+        </footer>
+    </div>
+
+    <script>
+        function showTab(tab) {
+            document.getElementById('privacy-section').style.display = tab === 'privacy' ? 'block' : 'none';
+            document.getElementById('terms-section').style.display = tab === 'terms' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', (tab === 'privacy' && idx === 0) || (tab === 'terms' && idx === 1));
+            });
+        }
+    </script>
+</body>
+</html>
