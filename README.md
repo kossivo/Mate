@@ -62,3 +62,21 @@ To execute the test suite across all modules:
 swift test
 ```
 All tests use Apple's modern Swift Testing framework (`import Testing`) with strict concurrency checking.
+
+---
+
+## 🚀 Terminal Deployment
+
+Deploy Mate directly to your simulator or physical iPhone from the terminal using the automated CLI tool:
+
+```bash
+# 1. Deploy to iOS Simulator
+./scripts/deploy.sh
+
+# 2. Deploy to Physical iPhone (USB or Wi-Fi via xcrun devicectl)
+./scripts/deploy.sh --device
+
+# 3. Run automated tests then deploy
+./scripts/deploy.sh --test --sim
+```
+For detailed instructions, see the [Terminal Deployment Guide](docs/DEPLOYMENT.md).
