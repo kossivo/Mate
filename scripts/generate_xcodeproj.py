@@ -21,7 +21,10 @@ sources = [
     "Sources/MateCore/UI/SettingsView.swift",
     "Sources/MateCore/UI/PaywallView.swift",
     "Sources/MateCore/UI/MainTabView.swift",
-    "Sources/MateCore/Widgets/MateWidgets.swift"
+    "Sources/MateCore/Widgets/MateWidgets.swift",
+    "Sources/MateCore/Assistant/AvailabilityEngine.swift",
+    "Sources/MateCore/Assistant/NotificationManager.swift",
+    "Sources/MateCore/Assistant/DocumentScannerView.swift"
 ]
 
 resources = [

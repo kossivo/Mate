@@ -68,6 +68,10 @@ public struct UniversalCaptureView: View {
                                                     .font(.caption2)
                                                     .foregroundStyle(.green)
                                             }
+
+                                            Label("Calendar Matched", systemImage: "checkmark.shield.fill")
+                                                .font(.caption2)
+                                                .foregroundStyle(.green)
                                         }
 
                                         if item.isAmbiguous {

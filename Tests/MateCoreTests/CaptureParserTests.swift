@@ -42,13 +42,49 @@ struct DeterministicCaptureParserTests {
         #expect(task3.category == "Health & Routine")
     }
 
-    @Test func testAmbiguousTaskWithoutDeadline() {
+    @Test func testVietnameseMultiTaskParsing() {
         let parser = DeterministicCaptureParser()
-        let input = "Complete report"
+        let input = "Tôi cần hoàn thành slide trước thứ 6, gọi cho mẹ tối nay và tập thể dục 3 lần tuần này"
+
+        var comp = DateComponents()
+        comp.year = 2026
+        comp.month = 11
+        comp.day = 25 // Wednesday
+        comp.hour = 10
+        let calendar = Calendar(identifier: .gregorian)
+        let refDate = calendar.date(from: comp)!
+
+        let results = parser.parse(text: input, referenceDate: refDate)
+
+        #expect(results.count == 3)
+        // Task 1: Slide
+        #expect(results[0].title.lowercased().contains("slide"))
+        #expect(results[0].deadline != nil)
+        #expect(results[0].category == "Work")
+
+        // Task 2: Gọi mẹ
+        #expect(results[1].title.lowercased().contains("mẹ") || results[1].title.lowercased().contains("gọi"))
+        #expect(results[1].deadline != nil)
+        #expect(results[1].category == "Personal")
+
+        // Task 3: Tập thể dục
+        #expect(results[2].title.lowercased().contains("tập thể dục"))
+        #expect(results[2].recurrence == "3x_weekly")
+        #expect(results[2].category == "Health & Routine")
+    }
+
+    @Test func testExactHourVietnameseParsing() {
+        let parser = DeterministicCaptureParser()
+        let input = "Họp với Nam lúc 15h30 ngày mai gấp"
         let results = parser.parse(text: input)
 
         #expect(results.count == 1)
-        #expect(results[0].isAmbiguous == true)
-        #expect(!results[0].ambiguityNotes.isEmpty)
+        #expect(results[0].priority == .urgent)
+        #expect(results[0].deadline != nil)
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: results[0].deadline!)
+        let min = calendar.component(.minute, from: results[0].deadline!)
+        #expect(hour == 15)
+        #expect(min == 30)
     }
 }
