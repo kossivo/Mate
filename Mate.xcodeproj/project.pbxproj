@@ -1,0 +1,311 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+/* Begin PBXBuildFile section */
+		54E5F2FC1C8641A494D685AB /* MateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A88CFFECE0443EA4248890 /* MateApp.swift */; };
+		3C6FF48434844DB094CFDF33 /* MateVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE81551941C4B7D8A262438 /* MateVersion.swift */; };
+		2F90CE50E03B486593EC4D78 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C073F557D0441791849FC6 /* Models.swift */; };
+		36FC9EDC3AA74ED583A64B4D /* DeterministicCaptureParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE0772AE311497D9CC9DC7F /* DeterministicCaptureParser.swift */; };
+		9F9CB03A0DBC450A9F361324 /* SmartSchedulingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750B2A721C7E4B6380071FAD /* SmartSchedulingEngine.swift */; };
+		7D1252E5505A448193ECAF35 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8820CC282C84435FBC112880 /* StoreKitManager.swift */; };
+		F92A9B1439FB4520AD116EAD /* EventKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72BB0E69E3B748EB92522185 /* EventKitManager.swift */; };
+		6C1FB7CDB3C7428795323940 /* MateIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56184809755647018B2E92B4 /* MateIntents.swift */; };
+		80EF378119B841C997A50C07 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8936FFBBF74246C48E6DDBF2 /* Theme.swift */; };
+		98C215901842424FABA6FE6A /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3723A41AE5A743D7998C2BCB /* TodayView.swift */; };
+		D01241ED88F04C4E92A102DC /* UniversalCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D2164A49DD40C5BC3157AB /* UniversalCaptureView.swift */; };
+		B08AB8C56F1947D598DBE654 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 947C6319F401450CA1A2286D /* PlanView.swift */; };
+		61643DA1322047F6BBD374D0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F186675D25DF49858BDDC514 /* SettingsView.swift */; };
+		5D6F719BE9684F3D8DC9C8A4 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3460CDCDA3F84937B80F5D2C /* PaywallView.swift */; };
+		A94683F4C423432D966CC10F /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FABCA67BDB04C469F1F12D5 /* MainTabView.swift */; };
+		3D1BA24A19D749DBB3259CFE /* MateWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3177C6604A0546B1A8DF063F /* MateWidgets.swift */; };
+		2C892A499EC44D1F8AE5C777 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 65CE72F7D01E42EE85DF39B6 /* Assets.xcassets */; };
+		3293023474A840B8AA110ADC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D4D63954D4F2472BB561FF8B /* PrivacyInfo.xcprivacy */; };
+		F7F848FB6FC545368A848CC6 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = CF3BE0E9119C4566AAE08A95 /* Localizable.strings */; };
+		A05313A14DD843C69CABA013 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = A9F319C4BC7F4C0FAEDDBBED /* Localizable.strings */; };
+		12860DF82B054C98BA3C230A /* Mate.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 53F907CCE2AD4ACA8AECCB09 /* Mate.storekit */; };
+/* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+		080000000000000000000008 /* Mate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1A88CFFECE0443EA4248890 /* MateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateApp/MateApp.swift"; sourceTree = "<group>"; };
+		0EE81551941C4B7D8A262438 /* MateVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/MateVersion.swift"; sourceTree = "<group>"; };
+		99C073F557D0441791849FC6 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/Domain/Models.swift"; sourceTree = "<group>"; };
+		6DE0772AE311497D9CC9DC7F /* DeterministicCaptureParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/Parser/DeterministicCaptureParser.swift"; sourceTree = "<group>"; };
+		750B2A721C7E4B6380071FAD /* SmartSchedulingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/Scheduler/SmartSchedulingEngine.swift"; sourceTree = "<group>"; };
+		8820CC282C84435FBC112880 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/StoreKit/StoreKitManager.swift"; sourceTree = "<group>"; };
+		72BB0E69E3B748EB92522185 /* EventKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/EventKit/EventKitManager.swift"; sourceTree = "<group>"; };
+		56184809755647018B2E92B4 /* MateIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/Intents/MateIntents.swift"; sourceTree = "<group>"; };
+		8936FFBBF74246C48E6DDBF2 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/UI/Theme.swift"; sourceTree = "<group>"; };
+		3723A41AE5A743D7998C2BCB /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/UI/TodayView.swift"; sourceTree = "<group>"; };
+		F6D2164A49DD40C5BC3157AB /* UniversalCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/UI/UniversalCaptureView.swift"; sourceTree = "<group>"; };
+		947C6319F401450CA1A2286D /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/UI/PlanView.swift"; sourceTree = "<group>"; };
+		F186675D25DF49858BDDC514 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/UI/SettingsView.swift"; sourceTree = "<group>"; };
+		3460CDCDA3F84937B80F5D2C /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/UI/PaywallView.swift"; sourceTree = "<group>"; };
+		0FABCA67BDB04C469F1F12D5 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/UI/MainTabView.swift"; sourceTree = "<group>"; };
+		3177C6604A0546B1A8DF063F /* MateWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/MateCore/Widgets/MateWidgets.swift"; sourceTree = "<group>"; };
+		65CE72F7D01E42EE85DF39B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Sources/MateApp/Assets.xcassets"; sourceTree = "<group>"; };
+		D4D63954D4F2472BB561FF8B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "Sources/MateCore/Resources/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
+		CF3BE0E9119C4566AAE08A95 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = "Sources/MateCore/Resources/en.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		A9F319C4BC7F4C0FAEDDBBED /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = "Sources/MateCore/Resources/vi.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		53F907CCE2AD4ACA8AECCB09 /* Mate.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Mate.storekit"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+/* Begin PBXFrameworksBuildPhase section */
+		050000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+/* Begin PBXGroup section */
+		060000000000000000000006 = {
+			isa = PBXGroup;
+			children = (
+				D1A88CFFECE0443EA4248890 /* MateApp.swift */,
+				0EE81551941C4B7D8A262438 /* MateVersion.swift */,
+				99C073F557D0441791849FC6 /* Models.swift */,
+				6DE0772AE311497D9CC9DC7F /* DeterministicCaptureParser.swift */,
+				750B2A721C7E4B6380071FAD /* SmartSchedulingEngine.swift */,
+				8820CC282C84435FBC112880 /* StoreKitManager.swift */,
+				72BB0E69E3B748EB92522185 /* EventKitManager.swift */,
+				56184809755647018B2E92B4 /* MateIntents.swift */,
+				8936FFBBF74246C48E6DDBF2 /* Theme.swift */,
+				3723A41AE5A743D7998C2BCB /* TodayView.swift */,
+				F6D2164A49DD40C5BC3157AB /* UniversalCaptureView.swift */,
+				947C6319F401450CA1A2286D /* PlanView.swift */,
+				F186675D25DF49858BDDC514 /* SettingsView.swift */,
+				3460CDCDA3F84937B80F5D2C /* PaywallView.swift */,
+				0FABCA67BDB04C469F1F12D5 /* MainTabView.swift */,
+				3177C6604A0546B1A8DF063F /* MateWidgets.swift */,
+				65CE72F7D01E42EE85DF39B6 /* Assets.xcassets */,
+				D4D63954D4F2472BB561FF8B /* PrivacyInfo.xcprivacy */,
+				CF3BE0E9119C4566AAE08A95 /* Localizable.strings */,
+				A9F319C4BC7F4C0FAEDDBBED /* Localizable.strings */,
+				53F907CCE2AD4ACA8AECCB09 /* Mate.storekit */,
+				070000000000000000000007 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		070000000000000000000007 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				080000000000000000000008 /* Mate.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+/* Begin PBXNativeTarget section */
+		020000000000000000000002 /* Mate */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A000000000000000000000A /* Build configuration list for PBXNativeTarget "Mate" */;
+			buildPhases = (
+				030000000000000000000003 /* Sources */,
+				050000000000000000000005 /* Frameworks */,
+				040000000000000000000004 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Mate;
+			productName = Mate;
+			productReference = 080000000000000000000008 /* Mate.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+/* Begin PBXProject section */
+		010000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					020000000000000000000002 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = 090000000000000000000009 /* Build configuration list for PBXProject "Mate" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				vi,
+				Base,
+			);
+			mainGroup = 060000000000000000000006;
+			productRefGroup = 070000000000000000000007 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				020000000000000000000002 /* Mate */,
+			);
+		};
+/* End PBXProject section */
+/* Begin PBXResourcesBuildPhase section */
+		040000000000000000000004 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2C892A499EC44D1F8AE5C777 /* Assets.xcassets in Resources */,
+				3293023474A840B8AA110ADC /* PrivacyInfo.xcprivacy in Resources */,
+				F7F848FB6FC545368A848CC6 /* Localizable.strings in Resources */,
+				A05313A14DD843C69CABA013 /* Localizable.strings in Resources */,
+				12860DF82B054C98BA3C230A /* Mate.storekit in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+/* Begin PBXSourcesBuildPhase section */
+		030000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				54E5F2FC1C8641A494D685AB /* MateApp.swift in Sources */,
+				3C6FF48434844DB094CFDF33 /* MateVersion.swift in Sources */,
+				2F90CE50E03B486593EC4D78 /* Models.swift in Sources */,
+				36FC9EDC3AA74ED583A64B4D /* DeterministicCaptureParser.swift in Sources */,
+				9F9CB03A0DBC450A9F361324 /* SmartSchedulingEngine.swift in Sources */,
+				7D1252E5505A448193ECAF35 /* StoreKitManager.swift in Sources */,
+				F92A9B1439FB4520AD116EAD /* EventKitManager.swift in Sources */,
+				6C1FB7CDB3C7428795323940 /* MateIntents.swift in Sources */,
+				80EF378119B841C997A50C07 /* Theme.swift in Sources */,
+				98C215901842424FABA6FE6A /* TodayView.swift in Sources */,
+				D01241ED88F04C4E92A102DC /* UniversalCaptureView.swift in Sources */,
+				B08AB8C56F1947D598DBE654 /* PlanView.swift in Sources */,
+				61643DA1322047F6BBD374D0 /* SettingsView.swift in Sources */,
+				5D6F719BE9684F3D8DC9C8A4 /* PaywallView.swift in Sources */,
+				A94683F4C423432D966CC10F /* MainTabView.swift in Sources */,
+				3D1BA24A19D749DBB3259CFE /* MateWidgets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+/* Begin XCBuildConfiguration section */
+		0B000000000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		0C000000000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		0D000000000000000000000D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Mate;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Mate reads your calendar to find available focus time and adds your approved scheduled tasks.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Mate accesses your reminders to organize and schedule your to-do items.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mate.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+
+			};
+			name = Debug;
+		};
+		0E000000000000000000000E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Mate;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Mate reads your calendar to find available focus time and adds your approved scheduled tasks.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Mate accesses your reminders to organize and schedule your to-do items.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mate.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+/* Begin XCConfigurationList section */
+		090000000000000000000009 /* Build configuration list for PBXProject "Mate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0B000000000000000000000B /* Debug */,
+				0C000000000000000000000C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0A000000000000000000000A /* Build configuration list for PBXNativeTarget "Mate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0D000000000000000000000D /* Debug */,
+				0E000000000000000000000E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 010000000000000000000001 /* Project object */;
+}
