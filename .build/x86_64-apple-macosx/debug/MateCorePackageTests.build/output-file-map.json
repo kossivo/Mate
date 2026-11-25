@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/master.swiftdeps"
+  },
+  "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.derived/runner.swift": {
+    "dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/runner.d",
+    "object": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/runner.dia"
+  }
+}

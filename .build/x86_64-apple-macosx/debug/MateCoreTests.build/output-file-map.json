@@ -1,0 +1,33 @@
+{
+  "": {
+    "swift-dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/master.swiftdeps"
+  },
+  "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/CaptureParserTests.swift": {
+    "dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/CaptureParserTests.d",
+    "object": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/CaptureParserTests.swift.o",
+    "swiftmodule": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/CaptureParserTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/CaptureParserTests.swiftdeps",
+    "diagnostics": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/CaptureParserTests.dia"
+  },
+  "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/DataModelTests.swift": {
+    "dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/DataModelTests.d",
+    "object": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/DataModelTests.swift.o",
+    "swiftmodule": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/DataModelTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/DataModelTests.swiftdeps",
+    "diagnostics": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/DataModelTests.dia"
+  },
+  "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/MateVersionTests.swift": {
+    "dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/MateVersionTests.d",
+    "object": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/MateVersionTests.swift.o",
+    "swiftmodule": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/MateVersionTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/MateVersionTests.swiftdeps",
+    "diagnostics": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/MateVersionTests.dia"
+  },
+  "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/SchedulingEngineTests.swift": {
+    "dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/SchedulingEngineTests.d",
+    "object": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/SchedulingEngineTests.swift.o",
+    "swiftmodule": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/SchedulingEngineTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/SchedulingEngineTests.swiftdeps",
+    "diagnostics": "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/SchedulingEngineTests.dia"
+  }
+}

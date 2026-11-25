@@ -1,0 +1,771 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.xctest/Contents/MacOS/MateCorePackageTests",
+      "packagePath" : "/Users/ngoctran/Downloads/Mate",
+      "productName" : "MateCorePackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.MateCore-x86_64-apple-macosx15.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/sources",
+      "importPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Domain/Models.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/MateVersion.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Parser/DeterministicCaptureParser.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Scheduler/SmartSchedulingEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/StoreKit/StoreKitManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "MateCore",
+      "moduleOutputPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules/MateCore.swiftmodule",
+      "objects" : [
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/Models.swift.o",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/MateVersion.swift.o",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/DeterministicCaptureParser.swift.o",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/SmartSchedulingEngine.swift.o",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/StoreKitManager.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/include/MateCore-Swift.h",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "mate"
+      ],
+      "outputFileMapPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/MateVersion.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/DeterministicCaptureParser.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/SmartSchedulingEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/StoreKitManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules/MateCore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Domain/Models.swift",
+        "/Users/ngoctran/Downloads/Mate/Sources/MateCore/MateVersion.swift",
+        "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Parser/DeterministicCaptureParser.swift",
+        "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Scheduler/SmartSchedulingEngine.swift",
+        "/Users/ngoctran/Downloads/Mate/Sources/MateCore/StoreKit/StoreKitManager.swift"
+      ],
+      "tempsPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.MateCorePackageTests-x86_64-apple-macosx15.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/sources",
+      "importPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules/MateCoreTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "MateCorePackageTests",
+      "moduleOutputPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules/MateCorePackageTests.swiftmodule",
+      "objects" : [
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/include/MateCorePackageTests-Swift.h",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "mate"
+      ],
+      "outputFileMapPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules/MateCorePackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.MateCoreTests-x86_64-apple-macosx15.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/sources",
+      "importPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/CaptureParserTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/DataModelTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/MateVersionTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/SchedulingEngineTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules/MateCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "MateCoreTests",
+      "moduleOutputPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules/MateCoreTests.swiftmodule",
+      "objects" : [
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/CaptureParserTests.swift.o",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/DataModelTests.swift.o",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/MateVersionTests.swift.o",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/SchedulingEngineTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "mate"
+      ],
+      "outputFileMapPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/CaptureParserTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/DataModelTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/MateVersionTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/SchedulingEngineTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules/MateCoreTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/CaptureParserTests.swift",
+        "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/DataModelTests.swift",
+        "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/MateVersionTests.swift",
+        "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/SchedulingEngineTests.swift"
+      ],
+      "tempsPath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "MateCore" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "MateCore",
+      "-package-name",
+      "mate",
+      "-c",
+      "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Domain/Models.swift",
+      "/Users/ngoctran/Downloads/Mate/Sources/MateCore/MateVersion.swift",
+      "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Parser/DeterministicCaptureParser.swift",
+      "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Scheduler/SmartSchedulingEngine.swift",
+      "/Users/ngoctran/Downloads/Mate/Sources/MateCore/StoreKit/StoreKitManager.swift",
+      "-I",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules",
+      "-target",
+      "x86_64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/include/MateCore-Swift.h",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "mate",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "MateCorePackageTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "MateCorePackageTests",
+      "-package-name",
+      "mate",
+      "-c",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.derived/runner.swift",
+      "-I",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules",
+      "-target",
+      "x86_64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/include/MateCorePackageTests-Swift.h",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "mate",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "MateCoreTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "MateCoreTests",
+      "-package-name",
+      "mate",
+      "-c",
+      "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/CaptureParserTests.swift",
+      "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/DataModelTests.swift",
+      "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/MateVersionTests.swift",
+      "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/SchedulingEngineTests.swift",
+      "-I",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/Modules",
+      "-target",
+      "x86_64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "mate",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "MateCore" : [
+
+    ],
+    "MateCorePackageTests" : [
+      "MateCoreTests",
+      "MateCore"
+    ],
+    "MateCoreTests" : [
+      "MateCore"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Domain/Models.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/MateVersion.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Parser/DeterministicCaptureParser.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/Scheduler/SmartSchedulingEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Sources/MateCore/StoreKit/StoreKitManager.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/sources"
+    },
+    "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/sources"
+    },
+    "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/DeterministicCaptureParser.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/MateVersion.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/SmartSchedulingEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCore.build/StoreKitManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/CaptureParserTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/DataModelTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/MateVersionTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/SchedulingEngineTests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCorePackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/CaptureParserTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/DataModelTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/MateVersionTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ngoctran/Downloads/Mate/Tests/MateCoreTests/SchedulingEngineTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/MateCoreTests.build/sources"
+    },
+    "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/ngoctran/Downloads/Mate/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}
