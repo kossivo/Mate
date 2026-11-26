@@ -24,13 +24,16 @@ public struct DocumentScannerView: View {
     private let parser = DeterministicCaptureParser()
     public let onAddContactOrTask: (TaskItem) -> Void
     public let onAddEvent: ((TimeBlock) -> Void)?
+    public let onScannedText: ((String) -> Void)?
 
     public init(
-        onAddContactOrTask: @escaping (TaskItem) -> Void,
-        onAddEvent: ((TimeBlock) -> Void)? = nil
+        onAddContactOrTask: @escaping (TaskItem) -> Void = { _ in },
+        onAddEvent: ((TimeBlock) -> Void)? = nil,
+        onScannedText: ((String) -> Void)? = nil
     ) {
         self.onAddContactOrTask = onAddContactOrTask
         self.onAddEvent = onAddEvent
+        self.onScannedText = onScannedText
     }
 
     public var body: some View {
@@ -263,6 +266,10 @@ public struct DocumentScannerView: View {
                             onAddContactOrTask(task)
                         }
 
+                        if let onScannedText {
+                            onScannedText(recognizedText)
+                        }
+
                         dismiss()
                     } label: {
                         HStack {
@@ -290,6 +297,10 @@ public struct DocumentScannerView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
+                        if let onScannedText {
+                            onScannedText(recognizedText)
+                        }
+
                         dismiss()
                     }
                     .foregroundStyle(MateTheme.opticWhite)

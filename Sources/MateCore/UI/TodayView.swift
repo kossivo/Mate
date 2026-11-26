@@ -13,6 +13,7 @@ public struct TodayView: View {
     @State private var showingSuggestFreeTimeSheet: Bool = false
     @State private var showingShareAvailabilitySheet: Bool = false
     @State private var showingScannerSheet: Bool = false
+    @State private var showingNotesSheet: Bool = false
     @State private var availabilityMessage: String = ""
     @State private var toastBanner: String? = nil
 
@@ -67,15 +68,38 @@ public struct TodayView: View {
             .background(MateTheme.pureBlack.ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingScannerSheet = true
+                    Menu {
+                        Button {
+                            showingNotesSheet = true
+                        } label: {
+                            Label("Quick Notes & Scratchpad", systemImage: "note.text")
+                        }
+                        Button {
+                            showingScannerSheet = true
+                        } label: {
+                            Label("Scan Business Card / Doc", systemImage: "doc.viewfinder")
+                        }
                     } label: {
-                        Image(systemName: "doc.viewfinder.fill")
-                            .font(.system(size: 16, weight: .semibold))
+                        Image(systemName: "note.text")
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(MateTheme.opticWhite)
+                    } primaryAction: {
+                        showingNotesSheet = true
                     }
-                    .accessibilityLabel("Scan schedule or notes")
+                    .accessibilityLabel("Notes and Scanner")
                 }
+            }
+            .sheet(isPresented: $showingNotesSheet) {
+                NotesView(
+                    onAddTask: { newTask in
+                        tasks.append(newTask)
+                        NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                    },
+                    onAddEvent: { newBlock in
+                        scheduledBlocks.append(newBlock)
+                        scheduledBlocks.sort { $0.startTime < $1.startTime }
+                    }
+                )
             }
             .sheet(isPresented: $showingCaptureSheet) {
                 UniversalCaptureView(

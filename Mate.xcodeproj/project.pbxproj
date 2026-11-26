@@ -26,6 +26,7 @@
 		C4CF1AE60DC34E7DACA4ADD3 /* Sources/MateCore/UI/UniversalCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8819DBBDF79E43928DF28E14 /* Sources/MateCore/UI/UniversalCaptureView.swift */; };
 		CA50427FBCC04A44B718EA0F /* Sources/MateCore/UI/TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82BD13B638664883B220D353 /* Sources/MateCore/UI/TodayView.swift */; };
 		CB50427FBCC04A44B718EA10 /* Sources/MateCore/UI/DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BD13B638664883B220D354 /* Sources/MateCore/UI/DashboardView.swift */; };
+		CC50427FBCC04A44B718EA11 /* Sources/MateCore/UI/NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84BD13B638664883B220D355 /* Sources/MateCore/UI/NotesView.swift */; };
 		D138DD25F96A41BE991B99E8 /* Mate.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 79BD8D03B8C64B2293D32A52 /* Mate.storekit */; };
 		D31B7C860C7648C285DE5C3A /* Sources/MateCore/Resources/PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BD369733FBD44198A679CC5E /* Sources/MateCore/Resources/PrivacyInfo.xcprivacy */; };
 		D87BECC844FF43DDB740B296 /* Sources/MateCore/StoreKit/StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B80C8A87B94243C1BBBF88E2 /* Sources/MateCore/StoreKit/StoreKitManager.swift */; };
@@ -48,6 +49,7 @@
 		79BD8D03B8C64B2293D32A52 /* Mate.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Mate.storekit; sourceTree = "<group>"; };
 		82BD13B638664883B220D353 /* Sources/MateCore/UI/TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/UI/TodayView.swift; sourceTree = "<group>"; };
 		83BD13B638664883B220D354 /* Sources/MateCore/UI/DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/UI/DashboardView.swift; sourceTree = "<group>"; };
+		84BD13B638664883B220D355 /* Sources/MateCore/UI/NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/UI/NotesView.swift; sourceTree = "<group>"; };
 		8819DBBDF79E43928DF28E14 /* Sources/MateCore/UI/UniversalCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/UI/UniversalCaptureView.swift; sourceTree = "<group>"; };
 		8E70FD028AC04E2982DC0E19 /* Sources/MateCore/MateVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/MateVersion.swift; sourceTree = "<group>"; };
 		9D759143C3BE415FA1F25A46 /* Sources/MateCore/UI/PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/UI/PlanView.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				3DBC7AD0D6CB42719BA3E50C /* Sources/MateCore/UI/Theme.swift */,
 				82BD13B638664883B220D353 /* Sources/MateCore/UI/TodayView.swift */,
 				83BD13B638664883B220D354 /* Sources/MateCore/UI/DashboardView.swift */,
+				84BD13B638664883B220D355 /* Sources/MateCore/UI/NotesView.swift */,
 				8819DBBDF79E43928DF28E14 /* Sources/MateCore/UI/UniversalCaptureView.swift */,
 				9D759143C3BE415FA1F25A46 /* Sources/MateCore/UI/PlanView.swift */,
 				A94E8F6B4CD740D6917E6A63 /* Sources/MateCore/UI/SettingsView.swift */,
@@ -201,6 +204,7 @@
 				9D9109C15CA74C86ACDC3FDD /* Sources/MateCore/UI/Theme.swift in Sources */,
 				CA50427FBCC04A44B718EA0F /* Sources/MateCore/UI/TodayView.swift in Sources */,
 				CB50427FBCC04A44B718EA10 /* Sources/MateCore/UI/DashboardView.swift in Sources */,
+				CC50427FBCC04A44B718EA11 /* Sources/MateCore/UI/NotesView.swift in Sources */,
 				C4CF1AE60DC34E7DACA4ADD3 /* Sources/MateCore/UI/UniversalCaptureView.swift in Sources */,
 				69D18EE0A01A402787C3637D /* Sources/MateCore/UI/PlanView.swift in Sources */,
 				F6A352DDC9364EE2B14B0B59 /* Sources/MateCore/UI/SettingsView.swift in Sources */,

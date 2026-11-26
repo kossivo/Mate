@@ -38,4 +38,20 @@ struct DataModelSerializationTests {
         #expect(prefs.meetingBufferMinutes == 10)
         #expect(prefs.protectWeekends == true)
     }
+
+    @Test func testNoteItemCodable() throws {
+        let note = NoteItem(
+            title: "Meeting with Client",
+            content: "Discuss Q4 roadmap and contract signing."
+        )
+
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(note)
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(NoteItem.self, from: data)
+
+        #expect(decoded.id == note.id)
+        #expect(decoded.title == "Meeting with Client")
+        #expect(decoded.content.contains("roadmap"))
+    }
 }
