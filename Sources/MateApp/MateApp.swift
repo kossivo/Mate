@@ -7,7 +7,9 @@ import MateCore
 public struct MateApp: App {
     public init() {
         #if canImport(MateCore)
+        #if DEBUG || targetEnvironment(simulator)
         StoreKitManager.shared.setWhitelisted(true)
+        #endif
         #endif
     }
 

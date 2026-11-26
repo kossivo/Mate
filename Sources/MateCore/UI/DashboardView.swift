@@ -268,7 +268,7 @@ public struct DashboardView: View {
         let result = engine.reallocateTasksByPriority(
             tasks: tasks,
             existingCommitments: scheduledBlocks,
-            preferences: UserPreference(),
+            preferences: UserPreference.load(),
             targetDate: targetDateForScope
         )
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
@@ -618,8 +618,8 @@ public struct DashboardView: View {
         if isCalAuthorized || promptIfNeeded {
             if let granted = try? await EventKitManager.shared.requestCalendarAccess(), granted {
                 if let events = try? await EventKitManager.shared.fetchEvents(from: startOfToday, to: endOfWeek) {
-                    let existingTitles = Set(scheduledBlocks.map { $0.title })
-                    let newEvents = events.filter { !existingTitles.contains($0.title) }
+                    let existingKeys = Set(scheduledBlocks.map { "\($0.title)_\($0.startTime.timeIntervalSince1970)_\($0.endTime.timeIntervalSince1970)" })
+                    let newEvents = events.filter { !existingKeys.contains("\($0.title)_\($0.startTime.timeIntervalSince1970)_\($0.endTime.timeIntervalSince1970)") }
                     scheduledBlocks.append(contentsOf: newEvents)
                 }
             }

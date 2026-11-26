@@ -76,7 +76,11 @@ public final class VoiceDictationManager: ObservableObject {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        request.requiresOnDeviceRecognition = false
+        if let recognizer = speechRecognizer, recognizer.supportsOnDeviceRecognition {
+            request.requiresOnDeviceRecognition = true
+        } else {
+            request.requiresOnDeviceRecognition = false
+        }
         self.recognitionRequest = request
 
         guard let recognizer = speechRecognizer, recognizer.isAvailable else {

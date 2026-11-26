@@ -124,7 +124,13 @@ public final class AvailabilityEngine: @unchecked Sendable {
             let currentMinute = calendar.component(.minute, from: now)
             let isPastWorkday = currentHour > preferences.workEndHour || (currentHour == preferences.workEndHour && currentMinute >= preferences.workEndMinute)
             if isPastWorkday {
-                effectiveDate = calendar.date(byAdding: .day, value: 1, to: targetDate) ?? targetDate
+                var next = calendar.date(byAdding: .day, value: 1, to: targetDate) ?? targetDate
+                if preferences.protectWeekends {
+                    while calendar.isDateInWeekend(next) {
+                        next = calendar.date(byAdding: .day, value: 1, to: next) ?? next
+                    }
+                }
+                effectiveDate = next
             }
         }
 
@@ -169,6 +175,10 @@ public final class AvailabilityEngine: @unchecked Sendable {
         evalDate: Date,
         maxSlots: Int
     ) -> [FreeSlot] {
+        if preferences.protectWeekends && calendar.isDateInWeekend(date) {
+            return []
+        }
+
         guard let dayStart = calendar.date(bySettingHour: preferences.workStartHour, minute: preferences.workStartMinute, second: 0, of: date),
               let dayEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: preferences.workEndMinute, second: 0, of: date),
               dayStart < dayEnd else {
@@ -348,11 +358,12 @@ public final class AvailabilityEngine: @unchecked Sendable {
         }
 
         // 2. Suggestion to Reschedule (Conflicts or Evening Overflow)
-        // Detect conflicts between existing commitments
-        for i in 0..<existingCommitments.count {
-            for j in (i + 1)..<existingCommitments.count {
-                let first = existingCommitments[i]
-                let second = existingCommitments[j]
+        // Detect conflicts between existing timed commitments (excluding all-day events/holidays)
+        let timedCommitments = existingCommitments.filter { !$0.isAllDay }
+        for i in 0..<timedCommitments.count {
+            for j in (i + 1)..<timedCommitments.count {
+                let first = timedCommitments[i]
+                let second = timedCommitments[j]
                 if first.endTime > second.startTime && first.startTime < second.endTime {
                     let moveTarget = second.isLocked ? first : second
                     let alternateSlot = freeSlots.first(where: { $0.startTime > second.endTime }) ?? freeSlots.first

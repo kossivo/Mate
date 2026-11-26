@@ -115,7 +115,17 @@ public struct TodayView: View {
             }
             .sheet(isPresented: $showingPlanSheet) {
                 PlanView(tasks: tasks, existingBlocks: scheduledBlocks) { proposal in
-                    scheduledBlocks = proposal.scheduledBlocks
+                    // Preserve all existing commitments (external calendar events, locked blocks, holidays)
+                    let existingLocked = scheduledBlocks.filter { $0.isLocked || $0.isAllDay }
+                    let existingIds = Set(existingLocked.map { $0.id })
+                    let newBlocks = proposal.scheduledBlocks.filter { !existingIds.contains($0.id) }
+                    scheduledBlocks = (existingLocked + newBlocks).sorted { $0.startTime < $1.startTime }
+                    withAnimation {
+                        toastBanner = "✓ Schedule optimized (\(newBlocks.count) tasks planned, \(existingLocked.count) events preserved)"
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation { toastBanner = nil }
+                    }
                 }
             }
             .sheet(isPresented: $showingScannerSheet) {
@@ -168,21 +178,27 @@ public struct TodayView: View {
     }
 
     private var dayArcTimeline: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let prefs = UserPreference.load()
+        let startHour = prefs.workStartHour
+        let endHour = max(startHour + 1, prefs.workEndHour)
+        let totalSpan = max(1, endHour - startHour)
+        let currentHour = Calendar.current.component(.hour, from: Date())
+        let clampedHour = min(max(currentHour, startHour), endHour)
+        let progress = CGFloat(clampedHour - startHour) / CGFloat(totalSpan)
+        let startStr = String(format: "%02d:%02d", prefs.workStartHour, prefs.workStartMinute)
+        let endStr = String(format: "%02d:%02d", prefs.workEndHour, prefs.workEndMinute)
+
+        return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("DAY CADENCE")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundStyle(MateTheme.slateDim)
                 Spacer()
-                Text("08:00 — 20:00")
+                Text("\(startStr) — \(endStr)")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundStyle(MateTheme.slateDim)
             }
             GeometryReader { geo in
-                let currentHour = Calendar.current.component(.hour, from: Date())
-                let clampedHour = min(max(currentHour, 8), 20)
-                let progress = CGFloat(clampedHour - 8) / 12.0
-
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(MateTheme.elevatedCard)
@@ -523,8 +539,11 @@ public struct TodayView: View {
         if isCalAuthorized || promptIfNeeded {
             if let granted = try? await EventKitManager.shared.requestCalendarAccess(), granted {
                 if let events = try? await EventKitManager.shared.fetchEvents(from: startOfDay, to: endOfDay) {
-                    let existingTitles = Set(scheduledBlocks.map { $0.title })
-                    let newEvents = events.filter { !existingTitles.contains($0.title) }
+                    let existingKeys = Set(scheduledBlocks.map { "\($0.title)_\($0.startTime.timeIntervalSince1970)_\($0.endTime.timeIntervalSince1970)" })
+                    let newEvents = events.filter {
+                        let key = "\($0.title)_\($0.startTime.timeIntervalSince1970)_\($0.endTime.timeIntervalSince1970)"
+                        return !existingKeys.contains(key)
+                    }
                     scheduledBlocks.append(contentsOf: newEvents)
                 }
             }
@@ -568,7 +587,7 @@ public struct TodayView: View {
         let slots = availabilityEngine.findAvailableSlots(
             durationMinutes: 45,
             existingCommitments: scheduledBlocks,
-            preferences: UserPreference(),
+            preferences: UserPreference.load(),
             targetDate: Date(),
             maxSlots: 3
         )
@@ -582,7 +601,7 @@ public struct TodayView: View {
         let result = schedulingEngine.reallocateTasksByPriority(
             tasks: tasks,
             existingCommitments: scheduledBlocks,
-            preferences: UserPreference(),
+            preferences: UserPreference.load(),
             targetDate: Date()
         )
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
@@ -738,7 +757,7 @@ public struct SuggestFreeTimeSheet: View {
     private var freeSlotsSection: some View {
         let suggestions = availabilityEngine.suggestOptimalSlots(
             existingCommitments: scheduledBlocks,
-            preferences: UserPreference(),
+            preferences: UserPreference.load(),
             targetDate: targetDate,
             maxSlots: 4
         )
@@ -842,7 +861,7 @@ public struct SuggestFreeTimeSheet: View {
         let smartSuggestions = availabilityEngine.generateSmartSuggestions(
             tasks: tasks,
             existingCommitments: scheduledBlocks,
-            preferences: UserPreference(),
+            preferences: UserPreference.load(),
             targetDate: targetDate
         )
 
@@ -1016,7 +1035,7 @@ public struct SuggestFreeTimeSheet: View {
             let result = schedulingEngine.reallocateTasksByPriority(
                 tasks: tasks,
                 existingCommitments: scheduledBlocks,
-                preferences: UserPreference(),
+                preferences: UserPreference.load(),
                 targetDate: targetDate
             )
             tasks = result.reallocatedTasks
