@@ -29,9 +29,9 @@ public final class SmartSchedulingEngine: @unchecked Sendable {
             )
         }
 
-        // 2. Extract busy intervals from existing commitments that overlap with targetDate
+        // 2. Extract busy intervals from existing commitments that overlap with targetDate (excluding all-day events / holidays)
         let sortedCommitments = existingCommitments
-            .filter { $0.endTime > dayStart && $0.startTime < dayEnd }
+            .filter { !$0.isAllDay && $0.endTime > dayStart && $0.startTime < dayEnd }
             .sorted { $0.startTime < $1.startTime }
 
         // Check for any internal conflicts within existing commitments

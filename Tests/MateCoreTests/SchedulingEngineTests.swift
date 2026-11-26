@@ -150,4 +150,36 @@ struct SmartSchedulingEngineTests {
         let unlocked = await storeKit.isPremiumUnlocked()
         #expect(unlocked == true)
     }
+
+    @Test func testAllDayHolidayDoesNotBlockDailyTaskScheduling() {
+        let engine = SmartSchedulingEngine()
+        let calendar = Calendar(identifier: .gregorian)
+        let targetDate = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date())!
+
+        // All-day holiday covering 00:00 to 24:00
+        let holidayStart = calendar.startOfDay(for: targetDate)
+        let holidayEnd = calendar.date(byAdding: .day, value: 1, to: holidayStart)!
+        let holidayBlock = TimeBlock(
+            title: "National Holiday",
+            startTime: holidayStart,
+            endTime: holidayEnd,
+            isLocked: true,
+            category: "Holiday",
+            isAllDay: true
+        )
+
+        let task = TaskItem(title: "Complete report draft", estimatedDuration: 1800, priority: .high)
+
+        let proposal = engine.schedule(
+            tasks: [task],
+            existingCommitments: [holidayBlock],
+            preferences: UserPreference(),
+            targetDate: targetDate
+        )
+
+        // The all-day holiday must NOT block the schedule
+        #expect(proposal.scheduledBlocks.count == 1)
+        #expect(proposal.scheduledBlocks[0].title == "Complete report draft")
+        #expect(proposal.unscheduledTasks.isEmpty)
+    }
 }

@@ -177,7 +177,7 @@ public final class AvailabilityEngine: @unchecked Sendable {
 
         let neededDuration = TimeInterval(durationMinutes * 60)
         let sorted = existingCommitments
-            .filter { $0.endTime > dayStart && $0.startTime < dayEnd }
+            .filter { !$0.isAllDay && $0.endTime > dayStart && $0.startTime < dayEnd }
             .sorted { $0.startTime < $1.startTime }
 
         var slots: [FreeSlot] = []

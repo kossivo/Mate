@@ -74,14 +74,21 @@ public final class EventKitManager: EventKitManaging, @unchecked Sendable {
         let ekEvents = eventStore.events(matching: predicate)
 
         return ekEvents.map { ekEvent in
-            TimeBlock(
+            let calTitle = ekEvent.calendar?.title ?? ""
+            let isHoliday = calTitle.localizedCaseInsensitiveContains("holiday") ||
+                            (ekEvent.title ?? "").localizedCaseInsensitiveContains("holiday") ||
+                            (ekEvent.calendar?.type == .subscription && ekEvent.isAllDay)
+            let isAllDay = ekEvent.isAllDay || isHoliday || ekEvent.endDate.timeIntervalSince(ekEvent.startDate) >= 86400
+
+            return TimeBlock(
                 id: UUID(),
                 taskId: nil,
                 title: ekEvent.title ?? "Calendar Commitment",
                 startTime: ekEvent.startDate,
                 endTime: ekEvent.endDate,
                 isLocked: true, // External calendar events are locked by default
-                category: "Calendar"
+                category: isHoliday ? "Holiday" : (isAllDay ? "All-Day" : "Calendar"),
+                isAllDay: isAllDay
             )
         }
     }

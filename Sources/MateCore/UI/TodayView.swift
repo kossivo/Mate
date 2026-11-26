@@ -35,6 +35,7 @@ public struct TodayView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         headerSection
                         dayArcTimeline.padding(.horizontal)
+                        allDayEventsBanner.padding(.horizontal)
                         briefingCard.padding(.horizontal)
                         nextCommitmentCard.padding(.horizontal)
                         prioritiesSection.padding(.horizontal)
@@ -265,9 +266,49 @@ public struct TodayView: View {
         )
     }
 
+    private var timedCommitments: [TimeBlock] {
+        scheduledBlocks.filter { !$0.isAllDay }
+    }
+
+    private var allDayBlocks: [TimeBlock] {
+        scheduledBlocks.filter { $0.isAllDay }
+    }
+
+    @ViewBuilder
+    private var allDayEventsBanner: some View {
+        if !allDayBlocks.isEmpty {
+            VStack(spacing: 8) {
+                ForEach(allDayBlocks) { item in
+                    HStack(spacing: 10) {
+                        Image(systemName: item.category == "Holiday" ? "sun.max.fill" : "calendar")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(item.category == "Holiday" ? Color.orange : MateTheme.silverMuted)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(MateTheme.opticWhite)
+                            Text(item.category == "Holiday" ? "Public Holiday · All Day" : "All-Day Event")
+                                .font(.caption2)
+                                .foregroundStyle(MateTheme.slateDim)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(MateTheme.cardBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(MateTheme.microBorder, lineWidth: 1)
+                    )
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private var nextCommitmentCard: some View {
-        if let next = scheduledBlocks.first {
+        if let next = timedCommitments.first(where: { $0.endTime > Date() }) ?? timedCommitments.first {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Label("Next Up", systemImage: "clock.fill")
@@ -393,11 +434,11 @@ public struct TodayView: View {
                 }
             }
 
-            if scheduledBlocks.isEmpty {
+            if timedCommitments.isEmpty {
                 HStack(spacing: 12) {
                     Image(systemName: "calendar.badge.clock")
                         .foregroundStyle(MateTheme.silverMuted)
-                    Text("Calendar clear. Open focus time available.")
+                    Text("No scheduled meetings. Open focus time available.")
                         .font(.subheadline)
                         .foregroundStyle(MateTheme.silverMuted)
                 }
@@ -410,7 +451,7 @@ public struct TodayView: View {
                         .stroke(MateTheme.microBorder, lineWidth: 1)
                 )
             } else {
-                ForEach(scheduledBlocks) { block in
+                ForEach(timedCommitments) { block in
                     HStack(spacing: 16) {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(block.startTime.formatted(date: .omitted, time: .shortened))
@@ -511,12 +552,15 @@ public struct TodayView: View {
     }
 
     private var briefingSummary: String {
-        let meetings = scheduledBlocks.filter { $0.isLocked }.count
+        let meetings = scheduledBlocks.filter { $0.isLocked && !$0.isAllDay }.count
         let remaining = tasks.filter { $0.status != .completed }.count
+        let holidayCount = allDayBlocks.count
+        let holidayNote = holidayCount > 0 ? " (plus \(holidayCount) all-day holiday)" : ""
         if isEvening {
             return "You accomplished \(tasks.filter { $0.status == .completed }.count) tasks today. \(remaining) pending items can be auto-scheduled for tomorrow."
         } else {
-            return "You have \(meetings) calendar commitments today and \(remaining) priority tasks waiting."
+            let meetingWord = meetings == 1 ? "commitment" : "commitments"
+            return "You have \(meetings) calendar \(meetingWord)\(holidayNote) today and \(remaining) priority tasks waiting."
         }
     }
 

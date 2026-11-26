@@ -469,17 +469,23 @@ public struct DashboardView: View {
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundStyle(MateTheme.silverMuted)
                 }
-                Text(block.startTime.formatted(date: .omitted, time: .shortened))
-                    .font(.caption.bold())
-                    .foregroundStyle(MateTheme.opticWhite)
-                Text(block.endTime.formatted(date: .omitted, time: .shortened))
-                    .font(.caption2)
-                    .foregroundStyle(MateTheme.slateDim)
+                if block.isAllDay {
+                    Text("All Day")
+                        .font(.caption.bold())
+                        .foregroundStyle(block.category == "Holiday" ? Color.orange : MateTheme.opticWhite)
+                } else {
+                    Text(block.startTime.formatted(date: .omitted, time: .shortened))
+                        .font(.caption.bold())
+                        .foregroundStyle(MateTheme.opticWhite)
+                    Text(block.endTime.formatted(date: .omitted, time: .shortened))
+                        .font(.caption2)
+                        .foregroundStyle(MateTheme.slateDim)
+                }
             }
             .frame(width: selectedScope == .week ? 66 : 56, alignment: .trailing)
 
             Rectangle()
-                .fill(block.isLocked ? MateTheme.opticWhite : MateTheme.slateDim)
+                .fill(block.isAllDay ? (block.category == "Holiday" ? Color.orange : MateTheme.silverMuted) : (block.isLocked ? MateTheme.opticWhite : MateTheme.slateDim))
                 .frame(width: 3)
                 .clipShape(Capsule())
 
@@ -489,17 +495,19 @@ public struct DashboardView: View {
                     .foregroundStyle(MateTheme.opticWhite)
 
                 HStack(spacing: 6) {
-                    Text("\(Int(block.duration / 60)) mins")
-                        .font(.caption2)
-                        .foregroundStyle(MateTheme.slateDim)
+                    if !block.isAllDay {
+                        Text("\(Int(block.duration / 60)) mins")
+                            .font(.caption2)
+                            .foregroundStyle(MateTheme.slateDim)
+                    }
 
                     if let cat = block.category {
                         Text(cat)
                             .font(.caption2)
-                            .foregroundStyle(MateTheme.silverMuted)
+                            .foregroundStyle(cat == "Holiday" ? Color.orange : MateTheme.silverMuted)
                     }
 
-                    if block.isLocked {
+                    if block.isLocked && !block.isAllDay {
                         Label("Calendar", systemImage: "lock.fill")
                             .font(.caption2)
                             .foregroundStyle(MateTheme.slateDim)

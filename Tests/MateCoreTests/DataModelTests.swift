@@ -77,6 +77,37 @@ struct DataModelSerializationTests {
         #expect(!note1.matchesExactContent(of: "Different content"))
     }
 
+    @Test func testTimeBlockWithIsAllDay() {
+        let block = TimeBlock(
+            title: "Thanksgiving Day",
+            startTime: Date(),
+            endTime: Date().addingTimeInterval(86400),
+            isLocked: true,
+            category: "Holiday",
+            isAllDay: true
+        )
+        #expect(block.isAllDay == true)
+        #expect(block.category == "Holiday")
+    }
+
+    @Test func testTimeBlockLegacyDecodingBackwardCompatibility() throws {
+        let legacyJSON = """
+        {
+            "id": "11111111-2222-3333-4444-555555555555",
+            "title": "Strategy Sync",
+            "startTime": 1700000000,
+            "endTime": 1700003600,
+            "isLocked": true
+        }
+        """.data(using: .utf8)!
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        let decoded = try decoder.decode(TimeBlock.self, from: legacyJSON)
+        #expect(decoded.title == "Strategy Sync")
+        #expect(decoded.isAllDay == false)
+    }
+
     @Test func testNoteItemCodable() throws {
         let note = NoteItem(
             title: "Meeting with Client",

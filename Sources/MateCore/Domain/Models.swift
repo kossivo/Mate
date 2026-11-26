@@ -85,6 +85,7 @@ public struct TimeBlock: Identifiable, Codable, Sendable, Equatable {
     public var endTime: Date
     public var isLocked: Bool
     public var category: String?
+    public var isAllDay: Bool
 
     public var duration: TimeInterval {
         endTime.timeIntervalSince(startTime)
@@ -97,7 +98,8 @@ public struct TimeBlock: Identifiable, Codable, Sendable, Equatable {
         startTime: Date,
         endTime: Date,
         isLocked: Bool = false,
-        category: String? = nil
+        category: String? = nil,
+        isAllDay: Bool = false
     ) {
         self.id = id
         self.taskId = taskId
@@ -106,6 +108,23 @@ public struct TimeBlock: Identifiable, Codable, Sendable, Equatable {
         self.endTime = endTime
         self.isLocked = isLocked
         self.category = category
+        self.isAllDay = isAllDay
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, taskId, title, startTime, endTime, isLocked, category, isAllDay
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.taskId = try container.decodeIfPresent(UUID.self, forKey: .taskId)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.startTime = try container.decode(Date.self, forKey: .startTime)
+        self.endTime = try container.decode(Date.self, forKey: .endTime)
+        self.isLocked = try container.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
+        self.category = try container.decodeIfPresent(String.self, forKey: .category)
+        self.isAllDay = try container.decodeIfPresent(Bool.self, forKey: .isAllDay) ?? false
     }
 }
 
