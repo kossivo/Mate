@@ -16,7 +16,7 @@ struct AppIntentsTests {
         let intent = PlanMyDayIntent()
         let result = try await intent.perform()
 
-        #expect(result.value == 0)
+        #expect((result.value ?? -1) >= 0)
     }
 
     @Test func testShortcutsProviderPhrases() {

@@ -6,8 +6,7 @@ import AppKit
 #endif
 
 public struct TodayView: View {
-    @State private var tasks: [TaskItem]
-    @State private var scheduledBlocks: [TimeBlock]
+    @ObservedObject private var store = DataManager.shared
     @State private var showingCaptureSheet: Bool = false
     @State private var showingPlanSheet: Bool = false
     @State private var showingSuggestFreeTimeSheet: Bool = false
@@ -20,12 +19,25 @@ public struct TodayView: View {
     private let availabilityEngine = AvailabilityEngine()
     private let schedulingEngine = SmartSchedulingEngine()
 
+    private var tasks: [TaskItem] {
+        get { store.tasks }
+        nonmutating set { store.tasks = newValue }
+    }
+    private var scheduledBlocks: [TimeBlock] {
+        get { store.scheduledBlocks }
+        nonmutating set { store.scheduledBlocks = newValue }
+    }
+
     public init(
         initialTasks: [TaskItem] = [],
         initialBlocks: [TimeBlock] = []
     ) {
-        _tasks = State(initialValue: initialTasks)
-        _scheduledBlocks = State(initialValue: initialBlocks)
+        if !initialTasks.isEmpty {
+            DataManager.shared.tasks = initialTasks
+        }
+        if !initialBlocks.isEmpty {
+            DataManager.shared.scheduledBlocks = initialBlocks
+        }
     }
 
     public var body: some View {
@@ -93,35 +105,28 @@ public struct TodayView: View {
             .sheet(isPresented: $showingNotesSheet) {
                 NotesView(
                     onAddTask: { newTask in
-                        tasks.append(newTask)
-                        NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                        store.addTask(newTask)
                     },
                     onAddEvent: { newBlock in
-                        scheduledBlocks.append(newBlock)
-                        scheduledBlocks.sort { $0.startTime < $1.startTime }
+                        store.addBlock(newBlock)
                     }
                 )
             }
             .sheet(isPresented: $showingCaptureSheet) {
                 UniversalCaptureView(
                     onSaveTask: { newTask in
-                        tasks.append(newTask)
-                        NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                        store.addTask(newTask)
                     },
                     onSaveEvent: { newEvent in
-                        scheduledBlocks.append(newEvent)
+                        store.addBlock(newEvent)
                     }
                 )
             }
             .sheet(isPresented: $showingPlanSheet) {
                 PlanView(tasks: tasks, existingBlocks: scheduledBlocks) { proposal in
-                    // Preserve all existing commitments (external calendar events, locked blocks, holidays)
-                    let existingLocked = scheduledBlocks.filter { $0.isLocked || $0.isAllDay }
-                    let existingIds = Set(existingLocked.map { $0.id })
-                    let newBlocks = proposal.scheduledBlocks.filter { !existingIds.contains($0.id) }
-                    scheduledBlocks = (existingLocked + newBlocks).sorted { $0.startTime < $1.startTime }
+                    store.applyProposal(proposal)
                     withAnimation {
-                        toastBanner = "✓ Schedule optimized (\(newBlocks.count) tasks planned, \(existingLocked.count) events preserved)"
+                        toastBanner = "✓ Schedule optimized (\(proposal.scheduledBlocks.count) tasks planned)"
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         withAnimation { toastBanner = nil }
@@ -131,21 +136,20 @@ public struct TodayView: View {
             .sheet(isPresented: $showingScannerSheet) {
                 DocumentScannerView(
                     onAddContactOrTask: { scannedTask in
-                        tasks.append(scannedTask)
+                        store.addTask(scannedTask)
                     },
                     onAddEvent: { scannedEvent in
-                        scheduledBlocks.append(scannedEvent)
+                        store.addBlock(scannedEvent)
                     }
                 )
             }
             .sheet(isPresented: $showingSuggestFreeTimeSheet) {
                 SuggestFreeTimeSheet(
-                    tasks: $tasks,
-                    scheduledBlocks: $scheduledBlocks,
+                    tasks: $store.tasks,
+                    scheduledBlocks: $store.scheduledBlocks,
                     targetDate: Date(),
                     onScheduleMeeting: { newBlock in
-                        scheduledBlocks.append(newBlock)
-                        scheduledBlocks.sort { $0.startTime < $1.startTime }
+                        store.addBlock(newBlock)
                     }
                 )
             }
@@ -388,7 +392,7 @@ public struct TodayView: View {
                         .stroke(MateTheme.microBorder, lineWidth: 1)
                 )
             } else {
-                ForEach($tasks) { $task in
+                ForEach($store.tasks) { $task in
                     HStack(spacing: 14) {
                         Button {
                             #if canImport(UIKit)
@@ -532,34 +536,7 @@ public struct TodayView: View {
 
     @MainActor
     private func syncWithCalendarAndReminders(promptIfNeeded: Bool = false) async {
-        let startOfDay = Calendar.current.startOfDay(for: Date())
-        guard let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) else { return }
-
-        let isCalAuthorized = EventKitManager.shared.isCalendarAuthorized
-        if isCalAuthorized || promptIfNeeded {
-            if let granted = try? await EventKitManager.shared.requestCalendarAccess(), granted {
-                if let events = try? await EventKitManager.shared.fetchEvents(from: startOfDay, to: endOfDay) {
-                    let existingKeys = Set(scheduledBlocks.map { "\($0.title)_\($0.startTime.timeIntervalSince1970)_\($0.endTime.timeIntervalSince1970)" })
-                    let newEvents = events.filter {
-                        let key = "\($0.title)_\($0.startTime.timeIntervalSince1970)_\($0.endTime.timeIntervalSince1970)"
-                        return !existingKeys.contains(key)
-                    }
-                    scheduledBlocks.append(contentsOf: newEvents)
-                }
-            }
-        }
-
-        let isRemAuthorized = EventKitManager.shared.isRemindersAuthorized
-        if isRemAuthorized || promptIfNeeded {
-            if let grantedReminders = try? await EventKitManager.shared.requestRemindersAccess(), grantedReminders {
-                if let reminders = try? await EventKitManager.shared.fetchReminders() {
-                    let taskTitles = Set(tasks.map { $0.title })
-                    let newTasks = reminders.filter { !taskTitles.contains($0.title) }
-                    tasks.append(contentsOf: newTasks)
-                    NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
-                }
-            }
-        }
+        await store.syncWithEventKit(promptIfNeeded: promptIfNeeded)
     }
 
     private var isEvening: Bool {

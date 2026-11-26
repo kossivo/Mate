@@ -123,4 +123,50 @@ struct DataModelSerializationTests {
         #expect(decoded.title == "Meeting with Client")
         #expect(decoded.content.contains("roadmap"))
     }
+
+    @Test @MainActor func testDataManagerTaskPersistenceAndToggle() {
+        let store = DataManager.shared
+        let uniqueTitle = "Task_\(UUID().uuidString)"
+        let task = TaskItem(title: uniqueTitle, priority: .high)
+        store.addTask(task)
+        #expect(store.tasks.contains(where: { $0.id == task.id }))
+
+        store.toggleTaskCompletion(task)
+        let toggled = store.tasks.first(where: { $0.id == task.id })
+        #expect(toggled?.status == .completed)
+
+        store.deleteTask(withId: task.id)
+        #expect(!store.tasks.contains(where: { $0.id == task.id }))
+    }
+
+    @Test @MainActor func testDataManagerProposalApplicationPreservesLocked() {
+        let store = DataManager.shared
+        let lockedBlock = TimeBlock(
+            title: "Board Meeting",
+            startTime: Date(),
+            endTime: Date().addingTimeInterval(3600),
+            isLocked: true
+        )
+        store.scheduledBlocks = [lockedBlock]
+
+        let newBlock = TimeBlock(
+            title: "Focus Time",
+            startTime: Date().addingTimeInterval(3600),
+            endTime: Date().addingTimeInterval(7200),
+            isLocked: false
+        )
+        let proposal = SchedulingProposal(scheduledBlocks: [newBlock])
+        store.applyProposal(proposal)
+
+        #expect(store.scheduledBlocks.contains(where: { $0.title == "Board Meeting" }))
+        #expect(store.scheduledBlocks.contains(where: { $0.title == "Focus Time" }))
+    }
+
+    @Test func testStoreKitProductFetchFallback() async {
+        let storeKit = StoreKitManager.shared
+        let products = await storeKit.fetchAvailableProducts()
+        #expect(products.count == 2)
+        #expect(products.contains(where: { $0.isAnnual }))
+        #expect(products.contains(where: { !$0.isAnnual }))
+    }
 }

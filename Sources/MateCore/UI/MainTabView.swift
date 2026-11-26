@@ -17,7 +17,7 @@ public struct MainTabView: View {
 
             DashboardView()
                 .tabItem {
-                    Label("Dashboard", systemImage: "calendar.badge.clock")
+                    Label("Schedule", systemImage: "calendar.badge.clock")
                 }
                 .tag(1)
 

@@ -9,9 +9,8 @@ public enum DashboardScope: String, CaseIterable, Identifiable {
 }
 
 public struct DashboardView: View {
+    @ObservedObject private var store = DataManager.shared
     @State private var selectedScope: DashboardScope = .today
-    @State private var tasks: [TaskItem] = []
-    @State private var scheduledBlocks: [TimeBlock] = []
     @State private var showingCaptureSheet: Bool = false
     @State private var showingScannerSheet: Bool = false
     @State private var showingNotesSheet: Bool = false
@@ -20,12 +19,25 @@ public struct DashboardView: View {
 
     private let calendar = Calendar.current
 
+    private var tasks: [TaskItem] {
+        get { store.tasks }
+        nonmutating set { store.tasks = newValue }
+    }
+    private var scheduledBlocks: [TimeBlock] {
+        get { store.scheduledBlocks }
+        nonmutating set { store.scheduledBlocks = newValue }
+    }
+
     public init(
         initialTasks: [TaskItem] = [],
         initialBlocks: [TimeBlock] = []
     ) {
-        _tasks = State(initialValue: initialTasks)
-        _scheduledBlocks = State(initialValue: initialBlocks)
+        if !initialTasks.isEmpty {
+            DataManager.shared.tasks = initialTasks
+        }
+        if !initialBlocks.isEmpty {
+            DataManager.shared.scheduledBlocks = initialBlocks
+        }
     }
 
     public var body: some View {
@@ -111,44 +123,40 @@ public struct DashboardView: View {
             .sheet(isPresented: $showingNotesSheet) {
                 NotesView(
                     onAddTask: { newTask in
-                        tasks.append(newTask)
-                        NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                        store.addTask(newTask)
                     },
                     onAddEvent: { newBlock in
-                        scheduledBlocks.append(newBlock)
-                        scheduledBlocks.sort { $0.startTime < $1.startTime }
+                        store.addBlock(newBlock)
                     }
                 )
             }
             .sheet(isPresented: $showingCaptureSheet) {
                 UniversalCaptureView(
                     onSaveTask: { newTask in
-                        tasks.append(newTask)
-                        NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                        store.addTask(newTask)
                     },
                     onSaveEvent: { newEvent in
-                        scheduledBlocks.append(newEvent)
+                        store.addBlock(newEvent)
                     }
                 )
             }
             .sheet(isPresented: $showingScannerSheet) {
                 DocumentScannerView(
                     onAddContactOrTask: { scannedTask in
-                        tasks.append(scannedTask)
+                        store.addTask(scannedTask)
                     },
                     onAddEvent: { scannedEvent in
-                        scheduledBlocks.append(scannedEvent)
+                        store.addBlock(scannedEvent)
                     }
                 )
             }
             .sheet(isPresented: $showingSuggestFreeTimeSheet) {
                 SuggestFreeTimeSheet(
-                    tasks: $tasks,
-                    scheduledBlocks: $scheduledBlocks,
+                    tasks: $store.tasks,
+                    scheduledBlocks: $store.scheduledBlocks,
                     targetDate: targetDateForScope,
                     onScheduleMeeting: { newBlock in
-                        scheduledBlocks.append(newBlock)
-                        scheduledBlocks.sort { $0.startTime < $1.startTime }
+                        store.addBlock(newBlock)
                     }
                 )
             }
@@ -364,9 +372,8 @@ public struct DashboardView: View {
                 #if canImport(UIKit)
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 #endif
-                if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
-                    tasks[idx].status = isDone ? .planned : .completed
-                    NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                    store.toggleTaskCompletion(task)
                 }
             } label: {
                 Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
@@ -611,30 +618,6 @@ public struct DashboardView: View {
 
     @MainActor
     private func syncData(promptIfNeeded: Bool = false) async {
-        let startOfToday = calendar.startOfDay(for: Date())
-        guard let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfToday) else { return }
-
-        let isCalAuthorized = EventKitManager.shared.isCalendarAuthorized
-        if isCalAuthorized || promptIfNeeded {
-            if let granted = try? await EventKitManager.shared.requestCalendarAccess(), granted {
-                if let events = try? await EventKitManager.shared.fetchEvents(from: startOfToday, to: endOfWeek) {
-                    let existingKeys = Set(scheduledBlocks.map { "\($0.title)_\($0.startTime.timeIntervalSince1970)_\($0.endTime.timeIntervalSince1970)" })
-                    let newEvents = events.filter { !existingKeys.contains("\($0.title)_\($0.startTime.timeIntervalSince1970)_\($0.endTime.timeIntervalSince1970)") }
-                    scheduledBlocks.append(contentsOf: newEvents)
-                }
-            }
-        }
-
-        let isRemAuthorized = EventKitManager.shared.isRemindersAuthorized
-        if isRemAuthorized || promptIfNeeded {
-            if let grantedReminders = try? await EventKitManager.shared.requestRemindersAccess(), grantedReminders {
-                if let reminders = try? await EventKitManager.shared.fetchReminders() {
-                    let taskTitles = Set(tasks.map { $0.title })
-                    let newTasks = reminders.filter { !taskTitles.contains($0.title) }
-                    tasks.append(contentsOf: newTasks)
-                    NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
-                }
-            }
-        }
+        await store.syncWithEventKit(promptIfNeeded: promptIfNeeded)
     }
 }

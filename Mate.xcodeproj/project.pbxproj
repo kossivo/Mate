@@ -34,6 +34,7 @@
 		F6A352DDC9364EE2B14B0B59 /* Sources/MateCore/UI/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94E8F6B4CD740D6917E6A63 /* Sources/MateCore/UI/SettingsView.swift */; };
 		FB12A338F3FC43CDB8110ADB /* Sources/MateCore/EventKit/EventKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66BE8B01C7F6463E9493BFA3 /* Sources/MateCore/EventKit/EventKitManager.swift */; };
 		FC5641EF00364C4BB5285E26 /* Sources/MateCore/Domain/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8E204AB3CB345BF818D8398 /* Sources/MateCore/Domain/Models.swift */; };
+		DA7A000100364C4BB5285E26 /* Sources/MateCore/Domain/DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7A00023CB345BF818D8398 /* Sources/MateCore/Domain/DataManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +58,7 @@
 		A94E8F6B4CD740D6917E6A63 /* Sources/MateCore/UI/SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/UI/SettingsView.swift; sourceTree = "<group>"; };
 		B80C8A87B94243C1BBBF88E2 /* Sources/MateCore/StoreKit/StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/StoreKit/StoreKitManager.swift; sourceTree = "<group>"; };
 		B8E204AB3CB345BF818D8398 /* Sources/MateCore/Domain/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/Domain/Models.swift; sourceTree = "<group>"; };
+		DA7A00023CB345BF818D8398 /* Sources/MateCore/Domain/DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MateCore/Domain/DataManager.swift; sourceTree = "<group>"; };
 		BD369733FBD44198A679CC5E /* Sources/MateCore/Resources/PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Sources/MateCore/Resources/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BD703CDA95B94C988AA33C8A /* Sources/MateApp/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Sources/MateApp/Assets.xcassets; sourceTree = "<group>"; };
 		CA5C68C5371249819C75B9BF /* Sources/MateCore/Resources/en.lproj/Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Sources/MateCore/Resources/en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -84,6 +86,7 @@
 				DFE0810AD2B241899774C285 /* Sources/MateApp/MateApp.swift */,
 				8E70FD028AC04E2982DC0E19 /* Sources/MateCore/MateVersion.swift */,
 				B8E204AB3CB345BF818D8398 /* Sources/MateCore/Domain/Models.swift */,
+				DA7A00023CB345BF818D8398 /* Sources/MateCore/Domain/DataManager.swift */,
 				2A7AE481B96E4D40B7647138 /* Sources/MateCore/Parser/DeterministicCaptureParser.swift */,
 				68F681A0249F42A190DC6B90 /* Sources/MateCore/Scheduler/SmartSchedulingEngine.swift */,
 				B80C8A87B94243C1BBBF88E2 /* Sources/MateCore/StoreKit/StoreKitManager.swift */,
@@ -196,6 +199,7 @@
 				BDE677D85FB9435AA15BC5D3 /* Sources/MateApp/MateApp.swift in Sources */,
 				0CAA077E39154EF6BFE09984 /* Sources/MateCore/MateVersion.swift in Sources */,
 				FC5641EF00364C4BB5285E26 /* Sources/MateCore/Domain/Models.swift in Sources */,
+				DA7A000100364C4BB5285E26 /* Sources/MateCore/Domain/DataManager.swift in Sources */,
 				1362124C2ABA4D99B446180C /* Sources/MateCore/Parser/DeterministicCaptureParser.swift in Sources */,
 				92755E7683AC4E52965D20AA /* Sources/MateCore/Scheduler/SmartSchedulingEngine.swift in Sources */,
 				D87BECC844FF43DDB740B296 /* Sources/MateCore/StoreKit/StoreKitManager.swift in Sources */,

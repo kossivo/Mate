@@ -6,7 +6,14 @@ public final class NotificationManager: @unchecked Sendable {
 
     public init() {}
 
+    private var isSupportedEnvironment: Bool {
+        guard Bundle.main.bundleIdentifier != nil else { return false }
+        guard NSClassFromString("XCTestCase") == nil else { return false }
+        return true
+    }
+
     public func requestNotificationPermission() async throws -> Bool {
+        guard isSupportedEnvironment else { return false }
         let center = UNUserNotificationCenter.current()
         let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
         return granted
@@ -14,6 +21,7 @@ public final class NotificationManager: @unchecked Sendable {
 
     /// Schedules a follow-up action trigger 5 minutes after a meeting finishes.
     public func schedulePostMeetingFollowUp(meetingTitle: String, meetingEndTime: Date, locale: String = "en") {
+        guard isSupportedEnvironment else { return }
         let center = UNUserNotificationCenter.current()
 
         let content = UNMutableNotificationContent()
@@ -41,7 +49,7 @@ public final class NotificationManager: @unchecked Sendable {
 
     /// Schedules a reminder alert for a task at its specified deadline/time.
     public func scheduleTaskReminder(title: String, reminderDate: Date, id: UUID = UUID()) {
-        guard reminderDate > Date() else { return }
+        guard reminderDate > Date(), isSupportedEnvironment else { return }
         let center = UNUserNotificationCenter.current()
 
         let content = UNMutableNotificationContent()
@@ -63,6 +71,7 @@ public final class NotificationManager: @unchecked Sendable {
 
     /// Sets the app badge count showing remaining incomplete tasks for today.
     public func updateBadgeCount(_ count: Int) {
+        guard isSupportedEnvironment else { return }
         if #available(iOS 16.0, macOS 13.0, *) {
             UNUserNotificationCenter.current().setBadgeCount(count) { _ in }
         }

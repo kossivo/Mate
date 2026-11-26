@@ -21,11 +21,24 @@ public struct CaptureThoughtIntent: AppIntent {
         let parser = DeterministicCaptureParser()
         let items = parser.parse(text: text)
 
+        await MainActor.run {
+            for item in items {
+                let task = TaskItem(
+                    title: item.title,
+                    category: item.category,
+                    deadline: item.deadline,
+                    estimatedDuration: item.estimatedDuration,
+                    priority: item.priority
+                )
+                DataManager.shared.addTask(task)
+            }
+        }
+
         let summary: String
         if items.isEmpty {
             summary = "No tasks recognized."
         } else if items.count == 1 {
-            summary = "Captured: \(items[0].title)"
+            summary = "Captured in Mate: \(items[0].title)"
         } else {
             summary = "Captured \(items.count) tasks in Mate: " + items.map { $0.title }.joined(separator: ", ")
         }
@@ -42,16 +55,21 @@ public struct PlanMyDayIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some ProvidesDialog & ReturnsValue<Int> {
-        let engine = SmartSchedulingEngine()
-        let proposal = engine.schedule(
-            tasks: [],
-            existingCommitments: [],
-            preferences: UserPreference(),
-            targetDate: Date()
-        )
+        let count = await MainActor.run { () -> Int in
+            let store = DataManager.shared
+            let engine = SmartSchedulingEngine()
+            let proposal = engine.schedule(
+                tasks: store.tasks.filter { $0.status != .completed },
+                existingCommitments: store.scheduledBlocks,
+                preferences: store.preferences,
+                targetDate: Date()
+            )
+            store.applyProposal(proposal)
+            return proposal.scheduledBlocks.count
+        }
 
-        let message = "Mate checked your schedule. \(proposal.scheduledBlocks.count) tasks scheduled."
-        return .result(value: proposal.scheduledBlocks.count, dialog: IntentDialog(stringLiteral: message))
+        let message = "Mate optimized your schedule with \(count) focus blocks."
+        return .result(value: count, dialog: IntentDialog(stringLiteral: message))
     }
 }
 
@@ -63,7 +81,17 @@ public struct GetNextCommitmentIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some ProvidesDialog & ReturnsValue<String> {
-        let next = "No upcoming commitments for today."
+        let next = await MainActor.run { () -> String in
+            let now = Date()
+            if let upcoming = DataManager.shared.scheduledBlocks
+                .filter({ $0.startTime > now && !$0.isAllDay })
+                .sorted(by: { $0.startTime < $1.startTime })
+                .first {
+                let timeStr = upcoming.startTime.formatted(date: .omitted, time: .shortened)
+                return "\(upcoming.title) at \(timeStr)"
+            }
+            return "No upcoming commitments for today."
+        }
         return .result(value: next, dialog: IntentDialog(stringLiteral: next))
     }
 }

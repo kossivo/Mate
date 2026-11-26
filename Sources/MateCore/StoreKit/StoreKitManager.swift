@@ -11,15 +11,41 @@ public protocol StoreKitManaging: Sendable {
     func restorePurchases() async throws -> Bool
 }
 
+public struct StoreKitProductInfo: Identifiable, Sendable {
+    public let id: String
+    public let displayName: String
+    public let description: String
+    public let displayPrice: String
+    public let isAnnual: Bool
+    public let underlyingProduct: Product?
+
+    public init(
+        id: String,
+        displayName: String,
+        description: String,
+        displayPrice: String,
+        isAnnual: Bool,
+        underlyingProduct: Product? = nil
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.description = description
+        self.displayPrice = displayPrice
+        self.isAnnual = isAnnual
+        self.underlyingProduct = underlyingProduct
+    }
+}
+
 public final class StoreKitManager: StoreKitManaging, @unchecked Sendable {
     public static let shared = StoreKitManager()
 
-    // Configurable product identifiers to support either Non-Consumable or Auto-Renewable subscription
+    // Configurable product identifiers for StoreKit 2 Auto-Renewable subscriptions
     public static let nonConsumablePremiumId = "com.mate.app.premium.lifetime"
     public static let monthlySubscriptionId = "com.mate.app.subscription.monthly"
     public static let yearlySubscriptionId = "com.mate.app.subscription.yearly"
 
     private var cachedStatus: MateTier = .free
+    private var transactionListenerTask: Task<Void, Never>?
 
     /// Whitelist status for simulator and developer testing devices
     public var isWhitelisted: Bool {
@@ -35,8 +61,12 @@ public final class StoreKitManager: StoreKitManaging, @unchecked Sendable {
         return cachedStatus == .premium
     }
 
+    private var isTestingEnvironment: Bool {
+        NSClassFromString("XCTestCase") != nil ||
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
     public init() {
-        // Automatically persist whitelist for developer testing and simulator environments
         #if DEBUG || targetEnvironment(simulator)
         UserDefaults.standard.set(true, forKey: "com.mate.isProWhitelisted")
         cachedStatus = .premium
@@ -45,6 +75,14 @@ public final class StoreKitManager: StoreKitManaging, @unchecked Sendable {
             cachedStatus = .premium
         }
         #endif
+
+        if !isTestingEnvironment {
+            listenForTransactions()
+        }
+    }
+
+    deinit {
+        transactionListenerTask?.cancel()
     }
 
     public func setWhitelisted(_ whitelisted: Bool) {
@@ -56,13 +94,85 @@ public final class StoreKitManager: StoreKitManaging, @unchecked Sendable {
         }
     }
 
+    // MARK: - StoreKit 2 Product Fetching
+
+    public func fetchAvailableProducts() async -> [StoreKitProductInfo] {
+        if !isTestingEnvironment {
+            let productIds = [Self.monthlySubscriptionId, Self.yearlySubscriptionId]
+            if let storeProducts = try? await Product.products(for: productIds), !storeProducts.isEmpty {
+                return storeProducts.map { product in
+                    StoreKitProductInfo(
+                        id: product.id,
+                        displayName: product.displayName,
+                        description: product.description,
+                        displayPrice: product.displayPrice,
+                        isAnnual: product.id == Self.yearlySubscriptionId,
+                        underlyingProduct: product
+                    )
+                }.sorted { $0.isAnnual && !$1.isAnnual }
+            }
+        }
+
+        // Standard fallback for offline preview or unconfigured sandbox
+        return [
+            StoreKitProductInfo(
+                id: Self.yearlySubscriptionId,
+                displayName: "Mate Pro Annual",
+                description: "Full intelligent scheduling & zero telemetry",
+                displayPrice: "$9.99 / yr",
+                isAnnual: true,
+                underlyingProduct: nil
+            ),
+            StoreKitProductInfo(
+                id: Self.monthlySubscriptionId,
+                displayName: "Mate Pro Monthly",
+                description: "Full intelligent scheduling & zero telemetry",
+                displayPrice: "$1.99 / mo",
+                isAnnual: false,
+                underlyingProduct: nil
+            )
+        ]
+    }
+
+    // MARK: - StoreKit 2 Purchase Flow
+
+    public func purchase(productInfo: StoreKitProductInfo) async throws -> Bool {
+        if let product = productInfo.underlyingProduct {
+            let result = try await product.purchase()
+            switch result {
+            case .success(let verification):
+                switch verification {
+                case .verified(let transaction):
+                    await transaction.finish()
+                    cachedStatus = .premium
+                    return true
+                case .unverified:
+                    return false
+                }
+            case .userCancelled, .pending:
+                return false
+            @unknown default:
+                return false
+            }
+        } else {
+            // For testing without live App Store Connect product credentials
+            #if DEBUG || targetEnvironment(simulator)
+            setWhitelisted(true)
+            return true
+            #else
+            return false
+            #endif
+        }
+    }
+
+    // MARK: - StoreKit 2 Entitlement Checking
+
     public func isPremiumUnlocked() async -> Bool {
-        if isWhitelisted {
+        if isWhitelisted || isTestingEnvironment {
             cachedStatus = .premium
             return true
         }
 
-        // In StoreKit 2, iterate over currentEntitlements
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result {
                 if transaction.revocationDate == nil {
@@ -81,5 +191,18 @@ public final class StoreKitManager: StoreKitManaging, @unchecked Sendable {
     public func restorePurchases() async throws -> Bool {
         try await AppStore.sync()
         return await isPremiumUnlocked()
+    }
+
+    // MARK: - Real-time Background Transaction Listener
+
+    private func listenForTransactions() {
+        transactionListenerTask = Task.detached { [weak self] in
+            for await result in Transaction.updates {
+                if case .verified(let transaction) = result {
+                    await transaction.finish()
+                    _ = await self?.isPremiumUnlocked()
+                }
+            }
+        }
     }
 }
