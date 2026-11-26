@@ -182,4 +182,25 @@ struct SmartSchedulingEngineTests {
         #expect(proposal.scheduledBlocks[0].title == "Complete report draft")
         #expect(proposal.unscheduledTasks.isEmpty)
     }
+
+    @Test func testTaskPriorityOrderingAndManualRanking() {
+        let engine = SmartSchedulingEngine()
+        let lowTask = TaskItem(title: "Low Task", estimatedDuration: 1800, priority: .low)
+        let medTask = TaskItem(title: "Med Task", estimatedDuration: 1800, priority: .medium)
+        let highTask = TaskItem(title: "High Task", estimatedDuration: 1800, priority: .high)
+        let urgentTask = TaskItem(title: "Urgent Task", estimatedDuration: 1800, priority: .urgent)
+
+        let unordered = [lowTask, medTask, highTask, urgentTask]
+        let result = engine.reallocateTasksByPriority(tasks: unordered, existingCommitments: [])
+
+        #expect(result.reallocatedTasks[0].priority == .urgent)
+        #expect(result.reallocatedTasks[1].priority == .high)
+        #expect(result.reallocatedTasks[2].priority == .medium)
+        #expect(result.reallocatedTasks[3].priority == .low)
+
+        // Verify TaskPriority properties
+        #expect(TaskPriority.urgent.title == "Urgent")
+        #expect(TaskPriority.high.title == "High")
+        #expect(TaskPriority.allCases.count == 4)
+    }
 }

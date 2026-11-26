@@ -173,6 +173,38 @@ public struct UniversalCaptureView: View {
                 }
                 .buttonStyle(.plain)
 
+                if item.itemType == .task {
+                    Menu {
+                        ForEach(TaskPriority.allCases, id: \.self) { p in
+                            Button {
+                                #if canImport(UIKit)
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                #endif
+                                parsedItems[index].priority = p
+                            } label: {
+                                Label(p.title, systemImage: p.iconName)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Circle()
+                                .fill(MateTheme.priorityColor(item.priority))
+                                .frame(width: 6, height: 6)
+                            Text(item.priority.title.uppercased())
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(MateTheme.priorityColor(item.priority))
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(MateTheme.slateDim)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(MateTheme.elevatedCard)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                    }
+                }
+
                 Spacer()
 
                 if let cat = item.category {

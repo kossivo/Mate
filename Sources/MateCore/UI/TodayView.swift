@@ -370,10 +370,41 @@ public struct TodayView: View {
 
     private var prioritiesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("TOP PRIORITIES")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .tracking(1.2)
-                .foregroundStyle(MateTheme.silverMuted)
+            HStack {
+                Text("TOP PRIORITIES")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(MateTheme.silverMuted)
+                Spacer()
+                if !tasks.isEmpty {
+                    Button {
+                        #if canImport(UIKit)
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        #endif
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            store.sortTasksByPriority()
+                            toastBanner = "✓ Sorted by priority (Urgent → High → Med → Low)"
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation { toastBanner = nil }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.caption2.bold())
+                            Text("Sort by Priority")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundStyle(MateTheme.opticWhite)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(MateTheme.elevatedCard)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
 
             if tasks.isEmpty {
                 HStack(spacing: 12) {
@@ -421,9 +452,38 @@ public struct TodayView: View {
                             }
                         }
                         Spacer()
-                        Circle()
-                            .fill(MateTheme.priorityColor(task.priority))
-                            .frame(width: 8, height: 8)
+                        Menu {
+                            ForEach(TaskPriority.allCases, id: \.self) { p in
+                                Button {
+                                    #if canImport(UIKit)
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                    #endif
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        task.priority = p
+                                        store.updateTaskPriority(taskId: task.id, priority: p)
+                                    }
+                                } label: {
+                                    Label(p.title, systemImage: p.iconName)
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 5) {
+                                Circle()
+                                    .fill(MateTheme.priorityColor(task.priority))
+                                    .frame(width: 7, height: 7)
+                                Text(task.priority.title.uppercased())
+                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(MateTheme.priorityColor(task.priority))
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(MateTheme.slateDim)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(MateTheme.elevatedCard)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                        }
                     }
                     .padding(16)
                     .background(MateTheme.cardBackground)
@@ -582,14 +642,9 @@ public struct TodayView: View {
             targetDate: Date()
         )
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            tasks = result.reallocatedTasks
-            for block in result.proposal.scheduledBlocks {
-                if !scheduledBlocks.contains(where: { $0.title == block.title }) {
-                    scheduledBlocks.append(block)
-                }
-            }
-            scheduledBlocks.sort { $0.startTime < $1.startTime }
-            toastBanner = "✓ Schedule optimized by priority"
+            store.tasks = result.reallocatedTasks
+            store.applyProposal(result.proposal)
+            toastBanner = "✓ Schedule prioritized (Urgent → High → Med → Low)"
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             withAnimation {
@@ -1016,13 +1071,12 @@ public struct SuggestFreeTimeSheet: View {
                 targetDate: targetDate
             )
             tasks = result.reallocatedTasks
-            for block in result.proposal.scheduledBlocks {
-                if !scheduledBlocks.contains(where: { $0.title == block.title }) {
-                    scheduledBlocks.append(block)
-                }
+            let existingLocked = scheduledBlocks.filter { $0.isLocked || $0.isAllDay }
+            let newPlanned = result.proposal.scheduledBlocks.filter { block in
+                !existingLocked.contains { $0.title == block.title && $0.startTime == block.startTime }
             }
-            scheduledBlocks.sort { $0.startTime < $1.startTime }
-            withAnimation { toastBanner = "✓ Schedule optimized by priority" }
+            scheduledBlocks = (existingLocked + newPlanned).sorted { $0.startTime < $1.startTime }
+            withAnimation { toastBanner = "✓ Schedule prioritized (Urgent → High → Med → Low)" }
 
         case .freeTime:
             if let start = suggestion.suggestedStartTime, let end = suggestion.suggestedEndTime {

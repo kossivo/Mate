@@ -6,6 +6,7 @@ public struct PlanView: View {
     public let existingBlocks: [TimeBlock]
     public let onConfirm: (SchedulingProposal) -> Void
 
+    @State private var candidateTasks: [TaskItem] = []
     @State private var proposal: SchedulingProposal = SchedulingProposal()
     @State private var isAnalyzing: Bool = true
     private let engine = SmartSchedulingEngine()
@@ -44,9 +45,14 @@ public struct PlanView: View {
                 } else {
                     VStack(spacing: 0) {
                         ScrollView {
-                            VStack(alignment: .leading, spacing: 20) {
-                                // Planning Summary Card
+                            VStack(alignment: .leading, spacing: 22) {
+                                // Optimization Summary Card
                                 summaryCard
+
+                                // Interactive Task Priority & Ranking Section
+                                if !candidateTasks.isEmpty {
+                                    taskRankingSection
+                                }
 
                                 // Unscheduled Warning if any
                                 if !proposal.unscheduledTasks.isEmpty {
@@ -65,10 +71,17 @@ public struct PlanView: View {
                         VStack(spacing: 0) {
                             Divider().background(MateTheme.microBorder)
                             Button {
+                                #if canImport(UIKit)
+                                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                #endif
+                                // Save any adjusted priorities back to DataManager
+                                for task in candidateTasks {
+                                    DataManager.shared.updateTaskPriority(taskId: task.id, priority: task.priority)
+                                }
                                 onConfirm(proposal)
                                 dismiss()
                             } label: {
-                                Text(proposal.scheduledBlocks.isEmpty ? "Keep Schedule Intact" : "Apply & Sync Schedule")
+                                Text(proposal.scheduledBlocks.isEmpty ? "Keep Schedule Intact" : "Apply & Lock Schedule (\(proposal.scheduledBlocks.count) blocks)")
                                     .font(.headline.bold())
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
@@ -96,17 +109,67 @@ public struct PlanView: View {
                 }
             }
             .task {
-                let prefs = UserPreference.load()
-                proposal = engine.schedule(
-                    tasks: tasks,
-                    existingCommitments: existingBlocks,
-                    preferences: prefs,
-                    targetDate: Date()
-                )
-                isAnalyzing = false
+                candidateTasks = tasks
+                    .filter { $0.status != .completed && $0.status != .cancelled }
+                    .sorted { (lhs, rhs) -> Bool in
+                        if lhs.priority != rhs.priority {
+                            return lhs.priority < rhs.priority
+                        }
+                        return lhs.estimatedDuration < rhs.estimatedDuration
+                    }
+                recalculateSchedule()
             }
         }
     }
+
+    // MARK: - Recalculate Scheduling Proposal
+
+    private func recalculateSchedule() {
+        let prefs = UserPreference.load()
+        proposal = engine.schedule(
+            tasks: candidateTasks,
+            existingCommitments: existingBlocks,
+            preferences: prefs,
+            targetDate: Date()
+        )
+        isAnalyzing = false
+    }
+
+    // MARK: - Task Ranking Controls
+
+    private func moveTaskUp(at index: Int) {
+        guard index > 0 else { return }
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        #endif
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            candidateTasks.swapAt(index, index - 1)
+            recalculateSchedule()
+        }
+    }
+
+    private func moveTaskDown(at index: Int) {
+        guard index < candidateTasks.count - 1 else { return }
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        #endif
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            candidateTasks.swapAt(index, index + 1)
+            recalculateSchedule()
+        }
+    }
+
+    private func updatePriority(at index: Int, to newPriority: TaskPriority) {
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            candidateTasks[index].priority = newPriority
+            recalculateSchedule()
+        }
+    }
+
+    // MARK: - Subviews
 
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -118,12 +181,12 @@ public struct PlanView: View {
                 Spacer()
             }
 
-            if proposal.scheduledBlocks.isEmpty && tasks.filter({ $0.status != .completed }).isEmpty {
+            if proposal.scheduledBlocks.isEmpty && candidateTasks.isEmpty {
                 Text("All tasks are already completed. Your existing calendar commitments will stay completely intact.")
                     .font(.subheadline)
                     .foregroundStyle(MateTheme.opticWhite)
             } else if proposal.scheduledBlocks.isEmpty {
-                Text("No available time slots found to fit pending tasks. Your existing calendar commitments remain preserved.")
+                Text("No open time slots fit pending tasks. Your existing calendar commitments remain preserved.")
                     .font(.subheadline)
                     .foregroundStyle(MateTheme.silverMuted)
             } else {
@@ -139,9 +202,172 @@ public struct PlanView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1))
     }
 
+    private var taskRankingSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("RANK & PRIORITIZE TASKS")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .tracking(1.2)
+                        .foregroundStyle(MateTheme.silverMuted)
+                    Text("Tap priority to change, or use ↑ ↓ to rank execution order")
+                        .font(.caption2)
+                        .foregroundStyle(MateTheme.slateDim)
+                }
+                Spacer()
+                Button {
+                    #if canImport(UIKit)
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    #endif
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        candidateTasks.sort { (lhs, rhs) -> Bool in
+                            if lhs.priority != rhs.priority {
+                                return lhs.priority < rhs.priority
+                            }
+                            return lhs.estimatedDuration < rhs.estimatedDuration
+                        }
+                        recalculateSchedule()
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.system(size: 10, weight: .bold))
+                        Text("Reset Sort")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(MateTheme.elevatedCard)
+                    .foregroundStyle(MateTheme.silverMuted)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+
+            VStack(spacing: 10) {
+                ForEach(Array(candidateTasks.enumerated()), id: \.element.id) { index, task in
+                    taskRankingRow(task: task, index: index)
+                }
+            }
+        }
+    }
+
+    private func taskRankingRow(task: TaskItem, index: Int) -> some View {
+        let isScheduled = proposal.scheduledBlocks.contains(where: { $0.title == task.title })
+
+        return HStack(spacing: 12) {
+            // Rank Number Badge
+            Text("#\(index + 1)")
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .foregroundStyle(isScheduled ? MateTheme.opticWhite : MateTheme.slateDim)
+                .frame(width: 26)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(task.title)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(MateTheme.opticWhite)
+                    .lineLimit(1)
+
+                HStack(spacing: 8) {
+                    Text("\(Int(task.estimatedDuration / 60)) mins")
+                        .font(.caption2)
+                        .foregroundStyle(MateTheme.slateDim)
+
+                    if let d = task.deadline {
+                        Text("Due " + d.formatted(date: .omitted, time: .shortened))
+                            .font(.caption2)
+                            .foregroundStyle(Color.red.opacity(0.85))
+                    }
+
+                    if isScheduled {
+                        Text("Fits Schedule")
+                            .font(.system(size: 9, weight: .bold))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Color.green.opacity(0.18))
+                            .foregroundStyle(Color.green)
+                            .clipShape(Capsule())
+                    } else {
+                        Text("No Free Slot")
+                            .font(.system(size: 9, weight: .bold))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Color.orange.opacity(0.18))
+                            .foregroundStyle(Color.orange)
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+
+            Spacer()
+
+            // Priority Menu Pill
+            Menu {
+                ForEach(TaskPriority.allCases, id: \.self) { p in
+                    Button {
+                        updatePriority(at: index, to: p)
+                    } label: {
+                        Label(p.title, systemImage: p.iconName)
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(MateTheme.priorityColor(task.priority))
+                        .frame(width: 6, height: 6)
+                    Text(task.priority.title.uppercased())
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundStyle(MateTheme.priorityColor(task.priority))
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundStyle(MateTheme.slateDim)
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 4)
+                .background(MateTheme.elevatedCard)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+            }
+
+            // Up / Down Rank Reorder Buttons
+            HStack(spacing: 4) {
+                Button {
+                    moveTaskUp(at: index)
+                } label: {
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(index == 0 ? MateTheme.slateDim.opacity(0.4) : MateTheme.opticWhite)
+                        .frame(width: 26, height: 26)
+                        .background(MateTheme.elevatedCard)
+                        .clipShape(Circle())
+                }
+                .disabled(index == 0)
+                .buttonStyle(.plain)
+
+                Button {
+                    moveTaskDown(at: index)
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(index == candidateTasks.count - 1 ? MateTheme.slateDim.opacity(0.4) : MateTheme.opticWhite)
+                        .frame(width: 26, height: 26)
+                        .background(MateTheme.elevatedCard)
+                        .clipShape(Circle())
+                }
+                .disabled(index == candidateTasks.count - 1)
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(12)
+        .background(MateTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MateTheme.microBorder, lineWidth: 1))
+    }
+
     private var unscheduledWarningCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Tasks Needing Rescheduling (\(proposal.unscheduledTasks.count))", systemImage: "clock.badge.exclamationmark.fill")
+            Label("Tasks Needing Attention (\(proposal.unscheduledTasks.count))", systemImage: "clock.badge.exclamationmark.fill")
                 .font(.subheadline.bold())
                 .foregroundStyle(Color.orange)
 

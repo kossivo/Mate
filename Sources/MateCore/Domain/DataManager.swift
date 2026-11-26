@@ -81,6 +81,41 @@ public final class DataManager: ObservableObject {
         }
     }
 
+    public func updateTaskPriority(taskId: UUID, priority: TaskPriority) {
+        if let idx = tasks.firstIndex(where: { $0.id == taskId }) {
+            tasks[idx].priority = priority
+            tasks[idx].updatedAt = Date()
+        }
+    }
+
+    public func sortTasksByPriority() {
+        tasks.sort { (lhs, rhs) -> Bool in
+            if lhs.status == .completed && rhs.status != .completed { return false }
+            if lhs.status != .completed && rhs.status == .completed { return true }
+            if lhs.priority != rhs.priority {
+                return lhs.priority < rhs.priority
+            }
+            if let lhsDeadline = lhs.deadline, let rhsDeadline = rhs.deadline {
+                if lhsDeadline != rhsDeadline {
+                    return lhsDeadline < rhsDeadline
+                }
+            } else if lhs.deadline != nil {
+                return true
+            } else if rhs.deadline != nil {
+                return false
+            }
+            return lhs.estimatedDuration < rhs.estimatedDuration
+        }
+    }
+
+    public func moveTask(from sourceIndex: Int, to destinationIndex: Int) {
+        guard sourceIndex >= 0 && sourceIndex < tasks.count,
+              destinationIndex >= 0 && destinationIndex < tasks.count,
+              sourceIndex != destinationIndex else { return }
+        let moved = tasks.remove(at: sourceIndex)
+        tasks.insert(moved, at: destinationIndex)
+    }
+
     public func toggleTaskCompletion(_ task: TaskItem) {
         if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
             tasks[idx].status = (tasks[idx].status == .completed) ? .planned : .completed

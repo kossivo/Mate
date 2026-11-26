@@ -1,10 +1,10 @@
 import Foundation
 
-public enum TaskPriority: String, Codable, Sendable, Comparable {
-    case low
-    case medium
-    case high
+public enum TaskPriority: String, Codable, Sendable, Comparable, CaseIterable {
     case urgent
+    case high
+    case medium
+    case low
 
     private var sortOrder: Int {
         switch self {
@@ -17,6 +17,24 @@ public enum TaskPriority: String, Codable, Sendable, Comparable {
 
     public static func < (lhs: TaskPriority, rhs: TaskPriority) -> Bool {
         return lhs.sortOrder < rhs.sortOrder
+    }
+
+    public var title: String {
+        switch self {
+        case .urgent: return "Urgent"
+        case .high: return "High"
+        case .medium: return "Medium"
+        case .low: return "Low"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .urgent: return "flame.fill"
+        case .high: return "exclamationmark.2"
+        case .medium: return "circle.fill"
+        case .low: return "arrow.down"
+        }
     }
 }
 

@@ -280,14 +280,9 @@ public struct DashboardView: View {
             targetDate: targetDateForScope
         )
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            tasks = result.reallocatedTasks
-            for block in result.proposal.scheduledBlocks {
-                if !scheduledBlocks.contains(where: { $0.title == block.title }) {
-                    scheduledBlocks.append(block)
-                }
-            }
-            scheduledBlocks.sort { $0.startTime < $1.startTime }
-            toastBanner = "✓ Schedule optimized by priority"
+            store.tasks = result.reallocatedTasks
+            store.applyProposal(result.proposal)
+            toastBanner = "✓ Schedule prioritized (Urgent → High → Med → Low)"
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             withAnimation {
@@ -327,19 +322,46 @@ public struct DashboardView: View {
     // MARK: - Tasks Section
 
     private var tasksSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let filteredTasks = tasksForSelectedScope
+        return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("TASKS TO DO")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
                 Spacer()
-                Text("\(tasksForSelectedScope.filter { $0.status != .completed }.count) tasks")
+                if !filteredTasks.isEmpty {
+                    Button {
+                        #if canImport(UIKit)
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        #endif
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            store.sortTasksByPriority()
+                            toastBanner = "✓ Sorted by priority (Urgent → High → Med → Low)"
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation { toastBanner = nil }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.caption2.bold())
+                            Text("Sort by Priority")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundStyle(MateTheme.opticWhite)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(MateTheme.elevatedCard)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+                Text("\(filteredTasks.filter { $0.status != .completed }.count) tasks")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(MateTheme.slateDim)
             }
-
-            let filteredTasks = tasksForSelectedScope
             if filteredTasks.isEmpty {
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle")
@@ -405,14 +427,36 @@ public struct DashboardView: View {
                             .clipShape(Capsule())
                     }
 
-                    if task.priority == .urgent || task.priority == .high {
-                        Text(task.priority == .urgent ? "Urgent" : "High")
-                            .font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.red.opacity(0.15))
-                            .foregroundStyle(Color.red)
-                            .clipShape(Capsule())
+                    Menu {
+                        ForEach(TaskPriority.allCases, id: \.self) { p in
+                            Button {
+                                #if canImport(UIKit)
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                #endif
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    store.updateTaskPriority(taskId: task.id, priority: p)
+                                }
+                            } label: {
+                                Label(p.title, systemImage: p.iconName)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(MateTheme.priorityColor(task.priority))
+                                .frame(width: 6, height: 6)
+                            Text(task.priority.title.uppercased())
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundStyle(MateTheme.priorityColor(task.priority))
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(MateTheme.slateDim)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(MateTheme.elevatedCard)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
                     }
                 }
             }
