@@ -19,8 +19,8 @@ public final class SmartSchedulingEngine: @unchecked Sendable {
         var conflicts: [String] = []
 
         // 1. Establish the day's schedulable time boundary (e.g. 09:00 - 17:00)
-        guard let dayStart = calendar.date(bySettingHour: preferences.workStartHour, minute: 0, second: 0, of: targetDate),
-              let dayEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: 0, second: 0, of: targetDate),
+        guard let dayStart = calendar.date(bySettingHour: preferences.workStartHour, minute: preferences.workStartMinute, second: 0, of: targetDate),
+              let dayEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: preferences.workEndMinute, second: 0, of: targetDate),
               dayStart < dayEnd else {
             return SchedulingProposal(
                 scheduledBlocks: [],
@@ -141,10 +141,12 @@ public final class SmartSchedulingEngine: @unchecked Sendable {
             }
 
             if !isScheduled {
+                let startStr = String(format: "%02d:%02d", preferences.workStartHour, preferences.workStartMinute)
+                let endStr = String(format: "%02d:%02d", preferences.workEndHour, preferences.workEndMinute)
                 unscheduled.append(UnscheduledTaskReason(
                     taskId: task.id,
                     taskTitle: task.title,
-                    reason: "No available time slot of \(Int(task.estimatedDuration / 60)) minutes within working hours (\(preferences.workStartHour):00-\(preferences.workEndHour):00)"
+                    reason: "No available time slot of \(Int(task.estimatedDuration / 60)) minutes within working hours (\(startStr)-\(endStr))"
                 ))
             }
         }

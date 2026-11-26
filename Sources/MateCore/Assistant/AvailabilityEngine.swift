@@ -121,7 +121,9 @@ public final class AvailabilityEngine: @unchecked Sendable {
 
         if isToday && !isSimulatedOrExplicit {
             let currentHour = calendar.component(.hour, from: now)
-            if currentHour >= preferences.workEndHour {
+            let currentMinute = calendar.component(.minute, from: now)
+            let isPastWorkday = currentHour > preferences.workEndHour || (currentHour == preferences.workEndHour && currentMinute >= preferences.workEndMinute)
+            if isPastWorkday {
                 effectiveDate = calendar.date(byAdding: .day, value: 1, to: targetDate) ?? targetDate
             }
         }
@@ -167,8 +169,8 @@ public final class AvailabilityEngine: @unchecked Sendable {
         evalDate: Date,
         maxSlots: Int
     ) -> [FreeSlot] {
-        guard let dayStart = calendar.date(bySettingHour: preferences.workStartHour, minute: 0, second: 0, of: date),
-              let dayEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: 0, second: 0, of: date),
+        guard let dayStart = calendar.date(bySettingHour: preferences.workStartHour, minute: preferences.workStartMinute, second: 0, of: date),
+              let dayEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: preferences.workEndMinute, second: 0, of: date),
               dayStart < dayEnd else {
             return []
         }

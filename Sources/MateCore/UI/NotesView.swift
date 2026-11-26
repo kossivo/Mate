@@ -165,23 +165,45 @@ public struct NotesView: View {
             Spacer()
 
             if !noteText.isEmpty {
-                Button {
-                    extractTasksAndEventsFromNote()
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(Color.yellow)
-                        Text("Extract to Schedule")
-                            .font(.caption2.bold())
+                HStack(spacing: 8) {
+                    ShareLink(
+                        item: noteText,
+                        subject: Text(title),
+                        message: Text("Exported from Mate to Apple Notes")
+                    ) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.caption2.bold())
+                            Text("Share / Notes")
+                                .font(.caption2.bold())
+                        }
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(MateTheme.elevatedCard)
+                        .foregroundStyle(MateTheme.opticWhite)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(MateTheme.elevatedCard)
-                    .foregroundStyle(MateTheme.opticWhite)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                    .buttonStyle(.plain)
+
+                    Button {
+                        extractTasksAndEventsFromNote()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "sparkles")
+                                .foregroundStyle(Color.yellow)
+                            Text("Extract Schedule")
+                                .font(.caption2.bold())
+                        }
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(MateTheme.elevatedCard)
+                        .foregroundStyle(MateTheme.opticWhite)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 16)
@@ -281,29 +303,67 @@ public struct NotesView: View {
                     .listRowBackground(Color.clear)
                 } else {
                     ForEach(notes) { note in
-                        Button {
-                            saveCurrentNoteIfNeeded()
-                            activeNoteId = note.id
-                            noteText = note.content
-                            isShowingNoteList = false
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(note.title)
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(MateTheme.opticWhite)
-                                Text(note.content)
-                                    .font(.caption)
-                                    .foregroundStyle(MateTheme.silverMuted)
-                                    .lineLimit(2)
-                                Text(note.updatedAt.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundStyle(MateTheme.slateDim)
+                        HStack {
+                            Button {
+                                saveCurrentNoteIfNeeded()
+                                activeNoteId = note.id
+                                noteText = note.content
+                                isShowingNoteList = false
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(note.title)
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(MateTheme.opticWhite)
+                                    Text(note.content)
+                                        .font(.caption)
+                                        .foregroundStyle(MateTheme.silverMuted)
+                                        .lineLimit(2)
+                                    Text(note.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.system(size: 10, design: .monospaced))
+                                        .foregroundStyle(MateTheme.slateDim)
+                                }
+                                .padding(.vertical, 4)
                             }
-                            .padding(.vertical, 4)
+
+                            Spacer()
+
+                            ShareLink(
+                                item: note.content,
+                                subject: Text(note.title),
+                                message: Text("Exported from Mate to Apple Notes")
+                            ) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(MateTheme.opticWhite)
+                                    .frame(width: 32, height: 32)
+                                    .background(MateTheme.elevatedCard)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(MateTheme.microBorder, lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Export to Apple Notes")
                         }
                         .listRowBackground(MateTheme.cardBackground)
                     }
                     .onDelete(perform: deleteNotes)
+
+                    Section {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "lock.shield.fill")
+                                    .foregroundStyle(.green)
+                                    .font(.caption)
+                                Text("Apple Notes & Privacy Architecture")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(MateTheme.opticWhite)
+                            }
+                            Text("Mate exports notes to Apple Notes via the official iOS Share Sheet. In compliance with Apple Security & Privacy Guidelines (5.1.1), third-party apps cannot scan private Apple Notes storage.")
+                                .font(.caption2)
+                                .foregroundStyle(MateTheme.silverMuted)
+                        }
+                        .padding(.vertical, 4)
+                        .listRowBackground(MateTheme.cardBackground)
+                    }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -316,6 +376,21 @@ public struct NotesView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { isShowingNoteList = false }
                         .foregroundStyle(MateTheme.opticWhite)
+                }
+
+                if notes.count > 1 {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            deduplicateNotes()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.triangle.merge")
+                                Text("Deduplicate")
+                            }
+                            .font(.caption.bold())
+                            .foregroundStyle(MateTheme.opticWhite)
+                        }
+                    }
                 }
             }
         }
@@ -405,25 +480,74 @@ public struct NotesView: View {
     }
 
     private func saveCurrentNoteIfNeeded() {
-        guard !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        let title = noteText.components(separatedBy: .newlines).first(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) ?? "New Note"
+        let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let title = trimmed.components(separatedBy: .newlines).first(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) ?? "New Note"
 
+        // 1. If currently editing an existing active note
         if let id = activeNoteId, let idx = notes.firstIndex(where: { $0.id == id }) {
-            notes[idx].title = title
-            notes[idx].content = noteText
-            notes[idx].updatedAt = Date()
-        } else {
-            let newNote = NoteItem(
-                id: activeNoteId ?? UUID(),
-                title: title,
-                content: noteText,
-                createdAt: Date(),
-                updatedAt: Date()
-            )
-            activeNoteId = newNote.id
-            notes.insert(newNote, at: 0)
+            if notes[idx].content != noteText {
+                notes[idx].title = title
+                notes[idx].content = noteText
+                notes[idx].updatedAt = Date()
+                persistNotes()
+            }
+            return
         }
+
+        // 2. Smart separation: Check if exact content already exists in another note
+        if let existingIdx = notes.firstIndex(where: { $0.matchesExactContent(of: noteText) }) {
+            activeNoteId = notes[existingIdx].id
+            notes[existingIdx].updatedAt = Date()
+            persistNotes()
+            return
+        }
+
+        // 3. Brand new distinct note
+        let newNote = NoteItem(
+            id: activeNoteId ?? UUID(),
+            title: title,
+            content: noteText,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+        activeNoteId = newNote.id
+        notes.insert(newNote, at: 0)
         persistNotes()
+    }
+
+    private func deduplicateNotes() {
+        var seen = Set<String>()
+        var unique: [NoteItem] = []
+        var removed = 0
+
+        for note in notes {
+            let key = note.normalizedContent.lowercased()
+            if !seen.contains(key) {
+                seen.insert(key)
+                unique.append(note)
+            } else {
+                removed += 1
+            }
+        }
+
+        if removed > 0 {
+            notes = unique
+            persistNotes()
+            withAnimation {
+                toastBanner = "Removed \(removed) duplicate note\(removed == 1 ? "" : "s")"
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { toastBanner = nil }
+            }
+        } else {
+            withAnimation {
+                toastBanner = "All notes are already unique"
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { toastBanner = nil }
+            }
+        }
     }
 
     private func deleteNotes(at offsets: IndexSet) {

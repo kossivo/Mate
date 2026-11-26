@@ -1,10 +1,9 @@
 import SwiftUI
 
 public struct SettingsView: View {
-    @State private var workStartHour: Int = 9
-    @State private var workEndHour: Int = 17
-    @State private var bufferMinutes: Int = 10
-    @State private var protectWeekends: Bool = true
+    @State private var preferences: UserPreference = UserPreference.load()
+    @State private var workStartTime: Date = Date()
+    @State private var workEndTime: Date = Date()
     @State private var iCloudSyncEnabled: Bool = true
     @State private var showingPaywall: Bool = false
     @State private var showingExportAlert: Bool = false
@@ -15,10 +14,41 @@ public struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("Working Hours") {
-                    Stepper("Work Starts: \(workStartHour):00", value: $workStartHour, in: 5...12)
-                    Stepper("Work Ends: \(workEndHour):00", value: $workEndHour, in: 13...23)
-                    Stepper("Meeting Buffer: \(bufferMinutes) mins", value: $bufferMinutes, in: 0...30, step: 5)
-                    Toggle("Protect Weekends", isOn: $protectWeekends)
+                    DatePicker("Work Starts", selection: $workStartTime, displayedComponents: .hourAndMinute)
+                        .onChange(of: workStartTime) { _, newValue in
+                            let cal = Calendar.current
+                            preferences.workStartHour = cal.component(.hour, from: newValue)
+                            preferences.workStartMinute = cal.component(.minute, from: newValue)
+                            preferences.save()
+                        }
+
+                    DatePicker("Work Ends", selection: $workEndTime, displayedComponents: .hourAndMinute)
+                        .onChange(of: workEndTime) { _, newValue in
+                            let cal = Calendar.current
+                            preferences.workEndHour = cal.component(.hour, from: newValue)
+                            preferences.workEndMinute = cal.component(.minute, from: newValue)
+                            preferences.save()
+                        }
+
+                    HStack {
+                        Text("Daily Work Window")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formattedWorkDuration)
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Stepper("Meeting Buffer: \(preferences.meetingBufferMinutes) mins", value: $preferences.meetingBufferMinutes, in: 0...30, step: 5)
+                        .onChange(of: preferences.meetingBufferMinutes) { _, _ in
+                            preferences.save()
+                        }
+
+                    Toggle("Protect Weekends", isOn: $preferences.protectWeekends)
+                        .onChange(of: preferences.protectWeekends) { _, _ in
+                            preferences.save()
+                        }
                 }
 
                 Section("Integrations") {
@@ -79,10 +109,9 @@ public struct SettingsView: View {
                         showingExportAlert = true
                     }
                     Button("Reset Preferences to Defaults", role: .destructive) {
-                        workStartHour = 9
-                        workEndHour = 17
-                        bufferMinutes = 10
-                        protectWeekends = true
+                        preferences = UserPreference()
+                        preferences.save()
+                        syncDatesFromPreferences()
                     }
                 }
 
@@ -96,6 +125,10 @@ public struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .onAppear {
+                preferences = UserPreference.load()
+                syncDatesFromPreferences()
+            }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
@@ -104,6 +137,28 @@ public struct SettingsView: View {
             } message: {
                 Text("Your Mate data export has been prepared locally on your device in compliance with privacy guidelines.")
             }
+        }
+    }
+
+    private func syncDatesFromPreferences() {
+        let cal = Calendar.current
+        let now = Date()
+        workStartTime = cal.date(bySettingHour: preferences.workStartHour, minute: preferences.workStartMinute, second: 0, of: now) ?? now
+        workEndTime = cal.date(bySettingHour: preferences.workEndHour, minute: preferences.workEndMinute, second: 0, of: now) ?? now
+    }
+
+    private var formattedWorkDuration: String {
+        let startMin = preferences.workStartHour * 60 + preferences.workStartMinute
+        let endMin = preferences.workEndHour * 60 + preferences.workEndMinute
+        let diff = max(0, endMin - startMin)
+        let hours = diff / 60
+        let minutes = diff % 60
+        let startStr = String(format: "%02d:%02d", preferences.workStartHour, preferences.workStartMinute)
+        let endStr = String(format: "%02d:%02d", preferences.workEndHour, preferences.workEndMinute)
+        if minutes == 0 {
+            return "\(startStr)–\(endStr) (\(hours)h window)"
+        } else {
+            return "\(startStr)–\(endStr) (\(hours)h \(minutes)m window)"
         }
     }
 }

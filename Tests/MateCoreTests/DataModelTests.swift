@@ -34,9 +34,47 @@ struct DataModelSerializationTests {
     @Test func testUserPreferenceDefaults() {
         let prefs = UserPreference()
         #expect(prefs.workStartHour == 9)
+        #expect(prefs.workStartMinute == 0)
         #expect(prefs.workEndHour == 17)
+        #expect(prefs.workEndMinute == 0)
         #expect(prefs.meetingBufferMinutes == 10)
         #expect(prefs.protectWeekends == true)
+    }
+
+    @Test func testUserPreferenceExactMinutes() {
+        let prefs = UserPreference(workStartHour: 8, workStartMinute: 30, workEndHour: 17, workEndMinute: 45)
+        #expect(prefs.workStartHour == 8)
+        #expect(prefs.workStartMinute == 30)
+        #expect(prefs.workEndHour == 17)
+        #expect(prefs.workEndMinute == 45)
+    }
+
+    @Test func testUserPreferenceLegacyDecodingBackwardCompatibility() throws {
+        // Simulating older JSON without workStartMinute or workEndMinute
+        let legacyJSON = """
+        {
+            "workStartHour": 8,
+            "workEndHour": 18,
+            "preferredTaskDurationMinutes": 25,
+            "meetingBufferMinutes": 15,
+            "protectWeekends": false
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(UserPreference.self, from: legacyJSON)
+        #expect(decoded.workStartHour == 8)
+        #expect(decoded.workStartMinute == 0)
+        #expect(decoded.workEndHour == 18)
+        #expect(decoded.workEndMinute == 0)
+        #expect(decoded.meetingBufferMinutes == 15)
+        #expect(decoded.protectWeekends == false)
+    }
+
+    @Test func testNoteItemMatchesExactContent() {
+        let note1 = NoteItem(title: "Ideas", content: "  Meeting notes with team\n  ")
+        #expect(note1.matchesExactContent(of: "meeting notes with team"))
+        #expect(note1.matchesExactContent(of: "Meeting notes with team\n"))
+        #expect(!note1.matchesExactContent(of: "Different content"))
     }
 
     @Test func testNoteItemCodable() throws {

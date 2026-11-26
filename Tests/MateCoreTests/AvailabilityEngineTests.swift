@@ -108,4 +108,28 @@ struct AvailabilityEngineTests {
         let priorityReallocation = suggestions.first { $0.kind == .reallocatePriority }
         #expect(priorityReallocation != nil)
     }
+
+    @Test func testFindFreeSlotsWithExactMinutePreferences() {
+        let engine = AvailabilityEngine()
+        let calendar = Calendar(identifier: .gregorian)
+        let targetDate = calendar.date(bySettingHour: 8, minute: 30, second: 0, of: Date())!
+
+        let prefs = UserPreference(workStartHour: 8, workStartMinute: 30, workEndHour: 17, workEndMinute: 30, meetingBufferMinutes: 10)
+
+        let slots = engine.findAvailableSlots(
+            durationMinutes: 45,
+            existingCommitments: [],
+            preferences: prefs,
+            targetDate: targetDate,
+            referenceDate: targetDate,
+            maxSlots: 2
+        )
+
+        #expect(!slots.isEmpty)
+        let firstSlot = slots[0]
+        let slotStartHour = calendar.component(.hour, from: firstSlot.startTime)
+        let slotStartMinute = calendar.component(.minute, from: firstSlot.startTime)
+        #expect(slotStartHour == 8)
+        #expect(slotStartMinute == 30)
+    }
 }

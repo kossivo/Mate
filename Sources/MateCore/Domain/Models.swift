@@ -110,8 +110,10 @@ public struct TimeBlock: Identifiable, Codable, Sendable, Equatable {
 }
 
 public struct UserPreference: Codable, Sendable, Equatable {
-    public var workStartHour: Int // 0-23 (e.g. 9 for 09:00)
-    public var workEndHour: Int   // 0-23 (e.g. 17 for 17:00)
+    public var workStartHour: Int   // 0-23 (e.g. 9 for 09:00)
+    public var workStartMinute: Int // 0-59 (e.g. 30 for 09:30)
+    public var workEndHour: Int     // 0-23 (e.g. 17 for 17:00)
+    public var workEndMinute: Int   // 0-59 (e.g. 30 for 17:30)
     public var preferredTaskDurationMinutes: Int
     public var meetingBufferMinutes: Int
     public var protectWeekends: Bool
@@ -120,7 +122,9 @@ public struct UserPreference: Codable, Sendable, Equatable {
 
     public init(
         workStartHour: Int = 9,
+        workStartMinute: Int = 0,
         workEndHour: Int = 17,
+        workEndMinute: Int = 0,
         preferredTaskDurationMinutes: Int = 30,
         meetingBufferMinutes: Int = 10,
         protectWeekends: Bool = true,
@@ -128,12 +132,55 @@ public struct UserPreference: Codable, Sendable, Equatable {
         focusEndHour: Int? = 12
     ) {
         self.workStartHour = workStartHour
+        self.workStartMinute = workStartMinute
         self.workEndHour = workEndHour
+        self.workEndMinute = workEndMinute
         self.preferredTaskDurationMinutes = preferredTaskDurationMinutes
         self.meetingBufferMinutes = meetingBufferMinutes
         self.protectWeekends = protectWeekends
         self.focusStartHour = focusStartHour
         self.focusEndHour = focusEndHour
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case workStartHour
+        case workStartMinute
+        case workEndHour
+        case workEndMinute
+        case preferredTaskDurationMinutes
+        case meetingBufferMinutes
+        case protectWeekends
+        case focusStartHour
+        case focusEndHour
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.workStartHour = try container.decodeIfPresent(Int.self, forKey: .workStartHour) ?? 9
+        self.workStartMinute = try container.decodeIfPresent(Int.self, forKey: .workStartMinute) ?? 0
+        self.workEndHour = try container.decodeIfPresent(Int.self, forKey: .workEndHour) ?? 17
+        self.workEndMinute = try container.decodeIfPresent(Int.self, forKey: .workEndMinute) ?? 0
+        self.preferredTaskDurationMinutes = try container.decodeIfPresent(Int.self, forKey: .preferredTaskDurationMinutes) ?? 30
+        self.meetingBufferMinutes = try container.decodeIfPresent(Int.self, forKey: .meetingBufferMinutes) ?? 10
+        self.protectWeekends = try container.decodeIfPresent(Bool.self, forKey: .protectWeekends) ?? true
+        self.focusStartHour = try container.decodeIfPresent(Int.self, forKey: .focusStartHour)
+        self.focusEndHour = try container.decodeIfPresent(Int.self, forKey: .focusEndHour)
+    }
+
+    public static let userDefaultsKey = "mate_user_preferences"
+
+    public static func load() -> UserPreference {
+        if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+           let decoded = try? JSONDecoder().decode(UserPreference.self, from: data) {
+            return decoded
+        }
+        return UserPreference()
+    }
+
+    public func save() {
+        if let data = try? JSONEncoder().encode(self) {
+            UserDefaults.standard.set(data, forKey: UserPreference.userDefaultsKey)
+        }
     }
 }
 
@@ -184,5 +231,13 @@ public struct NoteItem: Identifiable, Codable, Sendable, Equatable {
         self.content = content
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+
+    public var normalizedContent: String {
+        content.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    public func matchesExactContent(of otherContent: String) -> Bool {
+        normalizedContent.lowercased() == otherContent.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
