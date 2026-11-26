@@ -1,10 +1,10 @@
 import Foundation
 
 public enum FreeSlotType: String, Sendable, Codable, CaseIterable {
-    case focusDeepWork = "Tập trung sâu"
-    case meetingWindow = "Khung giờ họp"
-    case quickCatchup = "Trao đổi nhanh"
-    case buffer = "Nghỉ & Đệm"
+    case focusDeepWork = "Deep Focus"
+    case meetingWindow = "Meeting Window"
+    case quickCatchup = "Quick Sync"
+    case buffer = "Buffer Break"
 }
 
 public struct SmartFreeSlotSuggestion: Identifiable, Sendable, Equatable {
@@ -216,7 +216,7 @@ public final class AvailabilityEngine: @unchecked Sendable {
     }
 
     /// Formats invitation snippet in English or Vietnamese ready for copy/pasting into messaging apps.
-    public func formatInvitationMessage(slots: [FreeSlot], guestName: String? = nil, locale: String = "vi") -> String {
+    public func formatInvitationMessage(slots: [FreeSlot], guestName: String? = nil, locale: String = "en") -> String {
         guard !slots.isEmpty else {
             return locale == "vi" ? "Hiện tại lịch của mình đã kín trong những ngày tới." : "Currently my schedule is completely full over the coming days."
         }
@@ -273,19 +273,19 @@ public final class AvailabilityEngine: @unchecked Sendable {
 
             if isMorning {
                 type = .focusDeepWork
-                title = "Khung giờ vàng tập trung sâu"
-                subtitle = "Khoảng trống \(slot.startTime.formatted(date: .omitted, time: .shortened)) – \(slot.endTime.formatted(date: .omitted, time: .shortened)) không bị ngắt quãng. Lý tưởng cho việc giải quyết task phức tạp."
-                action = "Xếp việc tập trung"
+                title = "Prime Deep Focus Window"
+                subtitle = "Uninterrupted focus window \(slot.startTime.formatted(date: .omitted, time: .shortened)) – \(slot.endTime.formatted(date: .omitted, time: .shortened)). Ideal for complex priority work."
+                action = "Assign Focus Task"
             } else if durationMin >= 45 {
                 type = .meetingWindow
-                title = "Khung giờ lý tưởng để họp"
-                subtitle = "Khoảng trống chiều \(slot.startTime.formatted(date: .omitted, time: .shortened)) – \(slot.endTime.formatted(date: .omitted, time: .shortened)) có sẵn đệm nghỉ trước sau. Thuận tiện trao đổi đối tác."
-                action = "Lên lịch họp"
+                title = "Optimal Meeting Window"
+                subtitle = "Afternoon block \(slot.startTime.formatted(date: .omitted, time: .shortened)) – \(slot.endTime.formatted(date: .omitted, time: .shortened)) with buffer times before and after."
+                action = "Schedule Meeting"
             } else {
                 type = .quickCatchup
-                title = "Trao đổi nhanh 15-30 phút"
-                subtitle = "Thời lượng gọn gàng \(slot.startTime.formatted(date: .omitted, time: .shortened)) – \(slot.endTime.formatted(date: .omitted, time: .shortened)) cho sync tiến độ hoặc kiểm tra công việc."
-                action = "Lên lịch sync nhanh"
+                title = "Quick Sync (15–30 min)"
+                subtitle = "Quick window \(slot.startTime.formatted(date: .omitted, time: .shortened)) – \(slot.endTime.formatted(date: .omitted, time: .shortened)) for status updates or quick alignment."
+                action = "Schedule Quick Sync"
             }
 
             return SmartFreeSlotSuggestion(
@@ -335,9 +335,9 @@ public final class AvailabilityEngine: @unchecked Sendable {
             let timeStr = "\(slot.startTime.formatted(date: .omitted, time: .shortened)) - \(slot.endTime.formatted(date: .omitted, time: .shortened))"
             suggestions.append(SmartSuggestion(
                 kind: .scheduleMeeting,
-                title: "Lên lịch cuộc họp: \(task.title)",
-                detail: "Đã phát hiện việc cần gặp gỡ. Khung giờ trống lý tưởng nhất là \(timeStr).",
-                actionTitle: "Lên lịch ngay",
+                title: "Schedule meeting: \(task.title)",
+                detail: "Identified meeting to place. Best open window is \(timeStr).",
+                actionTitle: "Schedule Now",
                 iconName: "calendar.badge.plus",
                 targetTaskId: task.id,
                 suggestedStartTime: slot.startTime,
@@ -357,9 +357,9 @@ public final class AvailabilityEngine: @unchecked Sendable {
                     if let alt = alternateSlot {
                         suggestions.append(SmartSuggestion(
                             kind: .reschedule,
-                            title: "Trùng lịch: \(moveTarget.title)",
-                            detail: "Xung đột thời gian với '\(moveTarget.id == first.id ? second.title : first.title)'. Gợi ý dời sang \(alt.startTime.formatted(date: .omitted, time: .shortened)).",
-                            actionTitle: "Dời sang \(alt.startTime.formatted(date: .omitted, time: .shortened))",
+                            title: "Schedule conflict: \(moveTarget.title)",
+                            detail: "Time overlap with '\(moveTarget.id == first.id ? second.title : first.title)'. Suggest moving to \(alt.startTime.formatted(date: .omitted, time: .shortened)).",
+                            actionTitle: "Move to \(alt.startTime.formatted(date: .omitted, time: .shortened))",
                             iconName: "clock.arrow.2.circlepath",
                             targetBlockId: moveTarget.id,
                             suggestedStartTime: alt.startTime,
@@ -377,9 +377,9 @@ public final class AvailabilityEngine: @unchecked Sendable {
             if !incompleteTasks.isEmpty, let tmrMorning = calendar.date(byAdding: .day, value: 1, to: calendar.date(bySettingHour: 9, minute: 30, second: 0, of: now) ?? now) {
                 suggestions.append(SmartSuggestion(
                     kind: .reschedule,
-                    title: "Dời \(incompleteTasks.count) việc sang sáng mai",
-                    detail: "Hiện đã qua giờ làm việc. Tự động chuyển các việc còn lại sang 09:30 sáng mai để bảo vệ nhịp nghỉ ngơi.",
-                    actionTitle: "Dời sang sáng mai",
+                    title: "Move \(incompleteTasks.count) tasks to tomorrow morning",
+                    detail: "Past working hours. Automatically defer remaining items to 09:30 AM tomorrow.",
+                    actionTitle: "Move to Tomorrow",
                     iconName: "moon.fill",
                     suggestedStartTime: tmrMorning
                 ))
@@ -393,9 +393,9 @@ public final class AvailabilityEngine: @unchecked Sendable {
                 if minutesUntil > 0 && minutesUntil <= 180 {
                     suggestions.append(SmartSuggestion(
                         kind: .reminder,
-                        title: "Hạn chót sắp tới: \(task.title)",
-                        detail: "Thời hạn vào lúc \(deadline.formatted(date: .omitted, time: .shortened)) (còn \(minutesUntil) phút). Hãy bắt đầu để kịp tiến độ.",
-                        actionTitle: "Đặt báo nhắc",
+                        title: "Approaching deadline: \(task.title)",
+                        detail: "Due at \(deadline.formatted(date: .omitted, time: .shortened)) (\(minutesUntil) mins left). Start now to stay on track.",
+                        actionTitle: "Set Reminder",
                         iconName: "bell.badge.fill",
                         targetTaskId: task.id,
                         suggestedStartTime: deadline.addingTimeInterval(-task.estimatedDuration)
@@ -409,9 +409,9 @@ public final class AvailabilityEngine: @unchecked Sendable {
         if urgentOrHigh.count >= 2 {
             suggestions.append(SmartSuggestion(
                 kind: .reallocatePriority,
-                title: "Sắp xếp lại lịch theo độ ưu tiên",
-                detail: "Bạn có \(urgentOrHigh.count) việc quan trọng. Tự động ưu tiên xếp các việc này vào giờ tập trung vàng.",
-                actionTitle: "Tối ưu hoá theo ưu tiên",
+                title: "Reallocate schedule by priority",
+                detail: "You have \(urgentOrHigh.count) priority tasks. Automatically schedule them into prime focus windows.",
+                actionTitle: "Optimize by Priority",
                 iconName: "arrow.up.arrow.down.square.fill"
             ))
         }
@@ -421,9 +421,9 @@ public final class AvailabilityEngine: @unchecked Sendable {
             let timeStr = "\(bestSlot.startTime.formatted(date: .omitted, time: .shortened)) – \(bestSlot.endTime.formatted(date: .omitted, time: .shortened))"
             suggestions.append(SmartSuggestion(
                 kind: .freeTime,
-                title: "Khung giờ rảnh tốt nhất: \(timeStr)",
-                detail: "\(Int(bestSlot.duration / 60)) phút trống sẵn sàng cho bạn lên lịch họp hoặc tập trung sâu.",
-                actionTitle: "Sử dụng giờ rảnh",
+                title: "Prime Free Time: \(timeStr)",
+                detail: "\(Int(bestSlot.duration / 60)) open minutes ready for meetings or deep work.",
+                actionTitle: "Use Free Time",
                 iconName: "sparkles",
                 suggestedStartTime: bestSlot.startTime,
                 suggestedEndTime: bestSlot.endTime

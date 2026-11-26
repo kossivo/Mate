@@ -23,69 +23,8 @@ public struct TodayView: View {
         initialTasks: [TaskItem] = [],
         initialBlocks: [TimeBlock] = []
     ) {
-        _tasks = State(initialValue: initialTasks.isEmpty ? TodayView.defaultStarterTasks : initialTasks)
-        _scheduledBlocks = State(initialValue: initialBlocks.isEmpty ? TodayView.defaultStarterBlocks : initialBlocks)
-    }
-
-    private static var defaultStarterTasks: [TaskItem] {
-        let now = Date()
-        let cal = Calendar.current
-        let today18 = cal.date(bySettingHour: 18, minute: 0, second: 0, of: now)
-        let tmr10 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 10, minute: 0, second: 0, of: now) ?? now)
-        let friday = cal.date(byAdding: .day, value: 3, to: cal.date(bySettingHour: 17, minute: 0, second: 0, of: now) ?? now)
-
-        return [
-            TaskItem(
-                title: "Hoàn thành slide báo cáo",
-                category: "Work",
-                deadline: today18,
-                estimatedDuration: 60 * 60,
-                priority: .high,
-                status: .planned
-            ),
-            TaskItem(
-                title: "Gọi cho mẹ tối nay",
-                category: "Personal",
-                deadline: cal.date(bySettingHour: 20, minute: 0, second: 0, of: now),
-                estimatedDuration: 15 * 60,
-                priority: .medium,
-                status: .planned
-            ),
-            TaskItem(
-                title: "Gặp thảo luận hợp đồng với Nam",
-                category: "Meeting",
-                deadline: tmr10,
-                estimatedDuration: 45 * 60,
-                priority: .urgent,
-                status: .planned
-            ),
-            TaskItem(
-                title: "Tập thể dục 3 lần tuần này",
-                category: "Health & Routine",
-                deadline: friday,
-                estimatedDuration: 45 * 60,
-                priority: .medium,
-                status: .planned,
-                recurrenceRule: "3x_weekly"
-            )
-        ]
-    }
-
-    private static var defaultStarterBlocks: [TimeBlock] {
-        let now = Date()
-        let cal = Calendar.current
-        let today10 = cal.date(bySettingHour: 10, minute: 0, second: 0, of: now) ?? now
-        let today11 = cal.date(bySettingHour: 11, minute: 0, second: 0, of: now) ?? now
-        let today14 = cal.date(bySettingHour: 14, minute: 0, second: 0, of: now) ?? now
-        let today15 = cal.date(bySettingHour: 15, minute: 0, second: 0, of: now) ?? now
-        let tmr9 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 9, minute: 30, second: 0, of: now) ?? now) ?? now
-        let tmr10 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 10, minute: 30, second: 0, of: now) ?? now) ?? now
-
-        return [
-            TimeBlock(title: "Họp giao ban sáng", startTime: today10, endTime: today11, isLocked: true, category: "Work"),
-            TimeBlock(title: "Đồng bộ tiến độ dự án", startTime: today14, endTime: today15, isLocked: true, category: "Engineering"),
-            TimeBlock(title: "Hẹn cà phê trao đổi đối tác", startTime: tmr9, endTime: tmr10, isLocked: true, category: "Networking")
-        ]
+        _tasks = State(initialValue: initialTasks)
+        _scheduledBlocks = State(initialValue: initialBlocks)
     }
 
     public var body: some View {
@@ -135,7 +74,7 @@ public struct TodayView: View {
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(MateTheme.opticWhite)
                     }
-                    .accessibilityLabel("Quét lịch trình hoặc ghi chú")
+                    .accessibilityLabel("Scan schedule or notes")
                 }
             }
             .sheet(isPresented: $showingCaptureSheet) {
@@ -191,7 +130,7 @@ public struct TodayView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(Date().formatted(.dateTime.weekday(.wide).month().day()).uppercased())
+            Text(Date().formatted(.dateTime.weekday(.wide).month().day().locale(Locale(identifier: "en_US"))).uppercased())
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .tracking(1.5)
                 .foregroundStyle(MateTheme.silverMuted)
@@ -261,7 +200,7 @@ public struct TodayView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .foregroundStyle(Color.yellow)
-                        Text("Gợi ý giờ rảnh & Lịch")
+                        Text("Suggest Free Time")
                             .font(.caption.bold())
                     }
                     .padding(.horizontal, 12)
@@ -279,7 +218,7 @@ public struct TodayView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.up.arrow.down.square.fill")
                             .foregroundStyle(Color.blue)
-                        Text("Sắp xếp theo ưu tiên")
+                        Text("Sort by Priority")
                             .font(.caption.bold())
                     }
                     .padding(.horizontal, 12)
@@ -565,7 +504,7 @@ public struct TodayView: View {
             targetDate: Date(),
             maxSlots: 3
         )
-        availabilityMessage = availabilityEngine.formatInvitationMessage(slots: slots, guestName: nil, locale: "vi")
+        availabilityMessage = availabilityEngine.formatInvitationMessage(slots: slots, guestName: nil, locale: "en")
     }
 
     private func reallocateTasksByPriority() {
@@ -586,7 +525,7 @@ public struct TodayView: View {
                 }
             }
             scheduledBlocks.sort { $0.startTime < $1.startTime }
-            toastBanner = "✓ Đã tối ưu hoá lịch theo độ ưu tiên"
+            toastBanner = "✓ Schedule optimized by priority"
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             withAnimation {
@@ -603,7 +542,7 @@ public struct SuggestFreeTimeSheet: View {
     public let targetDate: Date
     public let onScheduleMeeting: (TimeBlock) -> Void
 
-    @State private var selectedTab: Int = 0 // 0: Gợi ý giờ rảnh, 1: Đề xuất thông minh
+    @State private var selectedTab: Int = 0 // 0: Free Windows, 1: Smart Suggestions
     @State private var toastBanner: String? = nil
 
     private let availabilityEngine = AvailabilityEngine()
@@ -629,10 +568,10 @@ public struct SuggestFreeTimeSheet: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 36))
                         .foregroundStyle(Color.yellow)
-                    Text("Trợ lý Lịch & Giờ rảnh")
+                    Text("Smart Schedule Assistant")
                         .font(.title2.bold())
                         .foregroundStyle(MateTheme.opticWhite)
-                    Text("Phân tích lịch trình thông minh để gợi ý khung giờ tốt nhất, dời lịch và phân bổ công việc theo độ ưu tiên.")
+                    Text("Intelligently analyzes your schedule to recommend prime focus windows, resolve conflicts, and reallocate tasks by priority.")
                         .font(.caption)
                         .foregroundStyle(MateTheme.silverMuted)
                         .multilineTextAlignment(.center)
@@ -673,13 +612,13 @@ public struct SuggestFreeTimeSheet: View {
                 }
             }
             .background(MateTheme.pureBlack.ignoresSafeArea())
-            .navigationTitle("Trợ lý Thông minh")
+            .navigationTitle("Schedule Assistant")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Đóng") { dismiss() }
+                    Button("Close") { dismiss() }
                         .foregroundStyle(MateTheme.opticWhite)
                 }
             }
@@ -693,7 +632,7 @@ public struct SuggestFreeTimeSheet: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "clock.badge.checkmark")
-                    Text("Gợi ý giờ rảnh")
+                    Text("Free Windows")
                 }
                 .font(.system(size: 13, weight: selectedTab == 0 ? .bold : .medium))
                 .frame(maxWidth: .infinity)
@@ -710,7 +649,7 @@ public struct SuggestFreeTimeSheet: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "wand.and.stars")
-                    Text("Đề xuất thông minh")
+                    Text("Smart Suggestions")
                 }
                 .font(.system(size: 13, weight: selectedTab == 1 ? .bold : .medium))
                 .frame(maxWidth: .infinity)
@@ -742,10 +681,10 @@ public struct SuggestFreeTimeSheet: View {
                     Image(systemName: "calendar.badge.clock")
                         .font(.system(size: 38))
                         .foregroundStyle(MateTheme.silverMuted)
-                    Text("Lịch hôm nay đã được lấp đầy")
+                    Text("Today's schedule is fully booked")
                         .font(.subheadline.bold())
                         .foregroundStyle(MateTheme.opticWhite)
-                    Text("Không còn khoảng trống trên 30 phút trong giờ làm việc. Hãy tận dụng thời gian hoàn thành các cam kết hiện tại.")
+                    Text("No open slots longer than 30 minutes during work hours. Maximize your focus on existing commitments.")
                         .font(.caption)
                         .foregroundStyle(MateTheme.slateDim)
                         .multilineTextAlignment(.center)
@@ -769,7 +708,7 @@ public struct SuggestFreeTimeSheet: View {
 
                             Spacer()
 
-                            Text("\(Int(item.slot.duration / 60)) phút")
+                            Text("\(Int(item.slot.duration / 60)) mins")
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundStyle(MateTheme.silverMuted)
                         }
@@ -793,7 +732,7 @@ public struct SuggestFreeTimeSheet: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     Image(systemName: "calendar.badge.plus")
-                                    Text("Lên lịch họp")
+                                    Text("Schedule Meeting")
                                         .font(.caption.bold())
                                 }
                                 .padding(.horizontal, 14)
@@ -809,7 +748,7 @@ public struct SuggestFreeTimeSheet: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     Image(systemName: "checklist")
-                                    Text("Xếp việc tập trung")
+                                    Text("Assign Focus Task")
                                         .font(.caption.bold())
                                 }
                                 .padding(.horizontal, 14)
@@ -845,10 +784,10 @@ public struct SuggestFreeTimeSheet: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 38))
                         .foregroundStyle(Color.green)
-                    Text("Lịch trình đang ở trạng thái tối ưu")
+                    Text("Schedule is optimally organized")
                         .font(.subheadline.bold())
                         .foregroundStyle(MateTheme.opticWhite)
-                    Text("Không có xung đột, việc gấp đều đã có lịch nhắc hoặc được sắp xếp hợp lý.")
+                    Text("No conflicts detected. Urgent tasks are scheduled or assigned reminders.")
                         .font(.caption)
                         .foregroundStyle(MateTheme.slateDim)
                         .multilineTextAlignment(.center)
@@ -930,7 +869,7 @@ public struct SuggestFreeTimeSheet: View {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         #endif
         let newBlock = TimeBlock(
-            title: "Cuộc họp mới",
+            title: "New Meeting",
             startTime: slot.startTime,
             endTime: slot.endTime,
             isLocked: true,
@@ -938,7 +877,7 @@ public struct SuggestFreeTimeSheet: View {
         )
         onScheduleMeeting(newBlock)
         withAnimation {
-            toastBanner = "✓ Đã lên lịch cuộc họp lúc \(slot.startTime.formatted(date: .omitted, time: .shortened))"
+            toastBanner = "✓ Scheduled meeting at \(slot.startTime.formatted(date: .omitted, time: .shortened))"
         }
     }
 
@@ -947,7 +886,7 @@ public struct SuggestFreeTimeSheet: View {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         #endif
         let topTask = tasks.first { $0.status != .completed }
-        let title = topTask?.title ?? "Phiên tập trung sâu"
+        let title = topTask?.title ?? "Deep Focus Session"
         let newBlock = TimeBlock(
             taskId: topTask?.id,
             title: title,
@@ -958,7 +897,7 @@ public struct SuggestFreeTimeSheet: View {
         )
         onScheduleMeeting(newBlock)
         withAnimation {
-            toastBanner = "✓ Đã xếp '\(title)' vào lúc \(slot.startTime.formatted(date: .omitted, time: .shortened))"
+            toastBanner = "✓ Scheduled '\(title)' at \(slot.startTime.formatted(date: .omitted, time: .shortened))"
         }
     }
 
@@ -973,14 +912,14 @@ public struct SuggestFreeTimeSheet: View {
                 let task = tasks.first { $0.id == suggestion.targetTaskId }
                 let newBlock = TimeBlock(
                     taskId: task?.id,
-                    title: task?.title ?? "Cuộc họp",
+                    title: task?.title ?? "Meeting",
                     startTime: start,
                     endTime: end,
                     isLocked: true,
                     category: "Meeting"
                 )
                 onScheduleMeeting(newBlock)
-                withAnimation { toastBanner = "✓ Đã lên lịch: \(newBlock.title)" }
+                withAnimation { toastBanner = "✓ Scheduled: \(newBlock.title)" }
             }
 
         case .reschedule:
@@ -989,20 +928,20 @@ public struct SuggestFreeTimeSheet: View {
                     scheduledBlocks[idx].startTime = newStart
                     scheduledBlocks[idx].endTime = newEnd
                     scheduledBlocks.sort { $0.startTime < $1.startTime }
-                    withAnimation { toastBanner = "✓ Đã dời lịch sang \(newStart.formatted(date: .omitted, time: .shortened))" }
+                    withAnimation { toastBanner = "✓ Rescheduled to \(newStart.formatted(date: .omitted, time: .shortened))" }
                 }
             } else if let newStart = suggestion.suggestedStartTime {
                 for i in 0..<tasks.count where tasks[i].status != .completed {
                     tasks[i].deadline = newStart
                 }
-                withAnimation { toastBanner = "✓ Đã chuyển việc tồn đọng sang sáng mai" }
+                withAnimation { toastBanner = "✓ Deferred pending tasks to tomorrow morning" }
             }
 
         case .reminder:
             if let taskId = suggestion.targetTaskId, let task = tasks.first(where: { $0.id == taskId }) {
                 let reminderDate = suggestion.suggestedStartTime ?? Date().addingTimeInterval(15 * 60)
                 NotificationManager.shared.scheduleTaskReminder(title: task.title, reminderDate: reminderDate, id: taskId)
-                withAnimation { toastBanner = "✓ Đã đặt nhắc việc: \(task.title)" }
+                withAnimation { toastBanner = "✓ Reminder set: \(task.title)" }
             }
 
         case .reallocatePriority:
@@ -1019,7 +958,7 @@ public struct SuggestFreeTimeSheet: View {
                 }
             }
             scheduledBlocks.sort { $0.startTime < $1.startTime }
-            withAnimation { toastBanner = "✓ Đã tối ưu hoá toàn bộ lịch theo mức độ ưu tiên" }
+            withAnimation { toastBanner = "✓ Schedule optimized by priority" }
 
         case .freeTime:
             if let start = suggestion.suggestedStartTime, let end = suggestion.suggestedEndTime {
@@ -1068,7 +1007,7 @@ public struct ShareAvailabilitySheet: View {
                     ShareLink(item: message) {
                         HStack(spacing: 8) {
                             Image(systemName: "square.and.arrow.up")
-                            Text("Chia sẻ qua Tin nhắn / Ứng dụng")
+                            Text("Share via Messages / Apps")
                                 .font(.headline)
                         }
                         .frame(maxWidth: .infinity)
@@ -1092,7 +1031,7 @@ public struct ShareAvailabilitySheet: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                            Text(copied ? "Đã sao chép vào Clipboard!" : "Sao chép tin nhắn hẹn")
+                            Text(copied ? "Copied to Clipboard!" : "Copy Availability Message")
                                 .font(.subheadline.bold())
                         }
                         .frame(maxWidth: .infinity)

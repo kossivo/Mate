@@ -11,7 +11,7 @@ import PhotosUI
 
 public struct DocumentScannerView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var recognizedText: String = "LỊCH TRÌNH NGÀY MAI:\n09:30 Họp đối tác tại văn phòng\n14:00 Thảo luận chiến lược\n17:30 Nhắc nộp báo cáo\n\nTuấn Nguyễn - Giám đốc Công nghệ\nSĐT: 0901234567\nEmail: tuan@tech.vn"
+    @State private var recognizedText: String = ""
     @State private var detectedName: String = ""
     @State private var detectedPhone: String = ""
     @State private var detectedEmail: String = ""
@@ -41,10 +41,10 @@ public struct DocumentScannerView: View {
                         Image(systemName: "doc.viewfinder.fill")
                             .font(.system(size: 46))
                             .foregroundStyle(MateTheme.opticWhite)
-                        Text("Quét Lịch & Danh thiếp")
+                        Text("Scan Schedule & Cards")
                             .font(.title2.bold())
                             .foregroundStyle(MateTheme.opticWhite)
-                        Text("Quét ảnh ghi chú lịch trình, agenda cuộc họp hoặc danh thiếp đối tác.")
+                        Text("Scan notes, meeting agendas, or business cards.")
                             .font(.subheadline)
                             .foregroundStyle(MateTheme.silverMuted)
                             .multilineTextAlignment(.center)
@@ -67,7 +67,7 @@ public struct DocumentScannerView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "camera.fill")
-                                Text("Chụp ảnh")
+                                Text("Take Photo")
                                     .font(.subheadline.bold())
                             }
                             .frame(maxWidth: .infinity)
@@ -84,7 +84,7 @@ public struct DocumentScannerView: View {
                         PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                             HStack(spacing: 8) {
                                 Image(systemName: "photo.on.rectangle.angled")
-                                Text("Chọn từ Thư viện")
+                                Text("Choose from Library")
                                     .font(.subheadline.bold())
                             }
                             .frame(maxWidth: .infinity)
@@ -104,7 +104,7 @@ public struct DocumentScannerView: View {
                         HStack(spacing: 10) {
                             ProgressView()
                                 .tint(MateTheme.opticWhite)
-                            Text("Đang đọc chữ từ tài liệu...")
+                            Text("Reading text from document...")
                                 .font(.caption.bold())
                                 .foregroundStyle(MateTheme.silverMuted)
                         }
@@ -113,11 +113,11 @@ public struct DocumentScannerView: View {
 
                     // Text Editor / Paste
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("NỘI DUNG VĂN BẢN TRÍCH XUẤT")
+                        Text("EXTRACTED TEXT")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundStyle(MateTheme.silverMuted)
 
-                        TextField("Dán lịch trình, ghi chú hoặc nội dung quét tại đây...", text: $recognizedText, axis: .vertical)
+                        TextField("Paste schedule, notes, or scanned content here...", text: $recognizedText, axis: .vertical)
                             .lineLimit(4...7)
                             .padding()
                             .background(MateTheme.cardBackground)
@@ -135,7 +135,7 @@ public struct DocumentScannerView: View {
                     // Extracted Schedule items
                     if !parsedItems.isEmpty {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("LỊCH TRÌNH & NHIỆM VỤ NHẬN DIỆN (\(parsedItems.count))")
+                            Text("RECOGNIZED SCHEDULE & TASKS (\(parsedItems.count))")
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundStyle(MateTheme.silverMuted)
 
@@ -155,7 +155,7 @@ public struct DocumentScannerView: View {
                                         }
                                     }
                                     Spacer()
-                                    Text(item.itemType == .event ? "Lịch hẹn" : "Nhiệm vụ")
+                                    Text(item.itemType == .event ? "Event" : "Task")
                                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 3)
@@ -177,18 +177,18 @@ public struct DocumentScannerView: View {
                     // Extracted Contact info
                     if !detectedPhone.isEmpty || !detectedEmail.isEmpty || !detectedName.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("THÔNG TIN LIÊN HỆ")
+                            Text("CONTACT INFORMATION")
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundStyle(MateTheme.silverMuted)
 
                             VStack(alignment: .leading, spacing: 6) {
                                 if !detectedName.isEmpty {
-                                    Label("Họ tên: \(detectedName)", systemImage: "person.fill")
+                                    Label("Name: \(detectedName)", systemImage: "person.fill")
                                         .font(.subheadline.bold())
                                         .foregroundStyle(MateTheme.opticWhite)
                                 }
                                 if !detectedPhone.isEmpty {
-                                    Label("Số điện thoại: \(detectedPhone)", systemImage: "phone.fill")
+                                    Label("Phone: \(detectedPhone)", systemImage: "phone.fill")
                                         .font(.caption)
                                         .foregroundStyle(MateTheme.silverMuted)
                                 }
@@ -241,8 +241,8 @@ public struct DocumentScannerView: View {
 
                         // 2. If contact info found, save contact follow-up
                         if !detectedName.isEmpty || !detectedPhone.isEmpty || !detectedEmail.isEmpty {
-                            let title = detectedName.isEmpty ? "Liên hệ lại theo ghi chú đã quét" : "Kết nối với \(detectedName)"
-                            let notes = "SĐT: \(detectedPhone) | Email: \(detectedEmail)\n\nNội dung gốc:\n\(recognizedText)"
+                            let title = detectedName.isEmpty ? "Follow up on scanned note" : "Connect with \(detectedName)"
+                            let notes = "Phone: \(detectedPhone) | Email: \(detectedEmail)\n\nOriginal text:\n\(recognizedText)"
                             let task = TaskItem(
                                 title: title,
                                 notes: notes,
@@ -254,7 +254,7 @@ public struct DocumentScannerView: View {
                         } else if parsedItems.isEmpty {
                             // Generic note
                             let task = TaskItem(
-                                title: recognizedText.components(separatedBy: .newlines).first ?? "Ghi chú đã quét",
+                                title: recognizedText.components(separatedBy: .newlines).first ?? "Scanned Note",
                                 notes: recognizedText,
                                 category: "Notes",
                                 priority: .medium,
@@ -268,7 +268,7 @@ public struct DocumentScannerView: View {
                         HStack {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 15, weight: .bold))
-                            Text("Lưu vào Lịch & Ghi chú")
+                            Text("Save to Schedule & Notes")
                                 .font(.headline)
                         }
                         .frame(maxWidth: .infinity)
@@ -283,13 +283,13 @@ public struct DocumentScannerView: View {
                 }
             }
             .background(MateTheme.pureBlack.ignoresSafeArea())
-            .navigationTitle("Quét Lịch & Thẻ")
+            .navigationTitle("Scan Schedule & Cards")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Đóng") {
+                    Button("Close") {
                         dismiss()
                     }
                     .foregroundStyle(MateTheme.opticWhite)
@@ -327,10 +327,10 @@ public struct DocumentScannerView: View {
                     analyzeScannedText(recognizedText)
                 }
             }
-            .alert("Máy ảnh không khả dụng", isPresented: $cameraUnavailableAlert) {
-                Button("Đã hiểu", role: .cancel) {}
+            .alert("Camera Unavailable", isPresented: $cameraUnavailableAlert) {
+                Button("OK", role: .cancel) {}
             } message: {
-                Text("Máy ảnh khả dụng trên thiết bị iPhone thật. Trên máy ảo, bạn có thể chọn ảnh từ Thư viện hoặc dán nội dung văn bản trực tiếp.")
+                Text("Camera is available on a physical iPhone. In simulator, choose an image from Photos or paste text directly.")
             }
         }
     }

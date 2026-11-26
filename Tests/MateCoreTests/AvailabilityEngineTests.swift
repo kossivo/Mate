@@ -65,8 +65,8 @@ struct AvailabilityEngineTests {
         #expect(!suggestions.isEmpty)
         let first = suggestions[0]
         #expect(first.type == .focusDeepWork)
-        #expect(first.title.contains("tập trung sâu"))
-        #expect(first.suggestedActionPrompt == "Xếp việc tập trung")
+        #expect(first.title.contains("Deep Focus"))
+        #expect(first.suggestedActionPrompt == "Assign Focus Task")
     }
 
     @Test func testGenerateSmartSuggestions() {

@@ -38,13 +38,13 @@ public struct UniversalCaptureView: View {
                 actionSaveButton
             }
             .background(MateTheme.pureBlack.ignoresSafeArea())
-            .navigationTitle("Nhập nhanh")
+            .navigationTitle("Quick Capture")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Đóng") {
+                    Button("Close") {
                         voiceManager.stopRecording()
                         dismiss()
                     }
@@ -71,7 +71,7 @@ public struct UniversalCaptureView: View {
 
     private var headerAndDictation: some View {
         HStack {
-            Text("Ghi nhanh hoặc Giọng nói")
+            Text("Quick Capture or Voice")
                 .font(.headline.bold())
                 .foregroundStyle(MateTheme.opticWhite)
             Spacer()
@@ -84,7 +84,7 @@ public struct UniversalCaptureView: View {
                     Image(systemName: voiceManager.isRecording ? "waveform.circle.fill" : "mic.fill")
                         .font(.body.bold())
                         .foregroundStyle(voiceManager.isRecording ? .red : MateTheme.opticWhite)
-                    Text(voiceManager.isRecording ? "Đang nghe..." : "Nói")
+                    Text(voiceManager.isRecording ? "Listening..." : "Speak")
                         .font(.caption.bold())
                         .foregroundStyle(voiceManager.isRecording ? .red : MateTheme.opticWhite)
                 }
@@ -99,7 +99,7 @@ public struct UniversalCaptureView: View {
     }
 
     private var textInputField: some View {
-        TextField("Ví dụ: Mai hẹn lúc 8.30 gặp Nam, nhắc mua sữa lúc 18h...", text: $inputText, axis: .vertical)
+        TextField("e.g., Tomorrow meeting at 8:30 with Alex, reminder to submit report at 5pm...", text: $inputText, axis: .vertical)
             .lineLimit(3...5)
             .padding()
             .background(MateTheme.cardBackground)
@@ -119,7 +119,7 @@ public struct UniversalCaptureView: View {
             Circle()
                 .fill(Color.red)
                 .frame(width: 8, height: 8)
-            Text("Đang lắng nghe tiếng Việt / tiếng Anh... Chạm Nói để dừng.")
+            Text("Listening for speech... Tap Speak to stop.")
                 .font(.caption)
                 .foregroundStyle(MateTheme.silverMuted)
         }
@@ -129,11 +129,11 @@ public struct UniversalCaptureView: View {
     private var itemsScrollView: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("MỤC NHẬN DIỆN (\(parsedItems.count))")
+                Text("RECOGNIZED ITEMS (\(parsedItems.count))")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(MateTheme.silverMuted)
                 Spacer()
-                Text("Chạm icon để đổi Lịch ↔ Việc")
+                Text("Tap icon to switch Event ↔ Task")
                     .font(.caption2)
                     .foregroundStyle(MateTheme.slateDim)
             }
@@ -162,7 +162,7 @@ public struct UniversalCaptureView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: item.itemType == .event ? "calendar.badge.clock" : "bell.fill")
-                        Text(item.itemType == .event ? "LỊCH HẸN" : "NHẮC VIỆC")
+                        Text(item.itemType == .event ? "EVENT" : "TASK")
                             .font(.system(size: 10, weight: .bold, design: .monospaced))
                     }
                     .padding(.horizontal, 8)
@@ -198,14 +198,14 @@ public struct UniversalCaptureView: View {
                             .font(.caption.bold())
                             .foregroundStyle(MateTheme.opticWhite)
                     } else {
-                        Label("Hạn chót: \(deadline.formatted(date: .abbreviated, time: .shortened))", systemImage: "bell.badge.fill")
+                        Label("Due: \(deadline.formatted(date: .abbreviated, time: .shortened))", systemImage: "bell.badge.fill")
                             .font(.caption.bold())
                             .foregroundStyle(MateTheme.opticWhite)
                     }
                 }
 
                 if item.itemType == .event {
-                    Text("(\(Int(item.estimatedDuration / 60)) phút)")
+                    Text("(\(Int(item.estimatedDuration / 60)) mins)")
                         .font(.caption2)
                         .foregroundStyle(MateTheme.slateDim)
                 }
@@ -219,11 +219,11 @@ public struct UniversalCaptureView: View {
 
             if item.deadline != nil {
                 if let conflict = item.calendarConflict {
-                    Label("Trùng với: \(conflict)", systemImage: "exclamationmark.triangle.fill")
+                    Label("Conflict with: \(conflict)", systemImage: "exclamationmark.triangle.fill")
                         .font(.caption2.bold())
                         .foregroundStyle(.red)
                 } else {
-                    Label("Khung giờ trống trên lịch", systemImage: "checkmark.seal.fill")
+                    Label("Open calendar slot", systemImage: "checkmark.seal.fill")
                         .font(.caption2.bold())
                         .foregroundStyle(.green)
                 }
@@ -274,7 +274,7 @@ public struct UniversalCaptureView: View {
             HStack {
                 Image(systemName: "checkmark")
                     .font(.system(size: 15, weight: .bold))
-                Text("Lưu \(max(1, parsedItems.count)) mục vào Lịch & Nhiệm vụ")
+                Text("Save \(max(1, parsedItems.count)) items to Schedule & Tasks")
                     .font(.headline)
             }
             .frame(maxWidth: .infinity)

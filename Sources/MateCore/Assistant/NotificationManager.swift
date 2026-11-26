@@ -13,7 +13,7 @@ public final class NotificationManager: @unchecked Sendable {
     }
 
     /// Schedules a follow-up action trigger 5 minutes after a meeting finishes.
-    public func schedulePostMeetingFollowUp(meetingTitle: String, meetingEndTime: Date, locale: String = "vi") {
+    public func schedulePostMeetingFollowUp(meetingTitle: String, meetingEndTime: Date, locale: String = "en") {
         let center = UNUserNotificationCenter.current()
 
         let content = UNMutableNotificationContent()
@@ -45,8 +45,8 @@ public final class NotificationManager: @unchecked Sendable {
         let center = UNUserNotificationCenter.current()
 
         let content = UNMutableNotificationContent()
-        content.title = "Nhắc nhở: \(title)"
-        content.body = "Đã đến giờ hoàn thành: \(title)"
+        content.title = "Reminder: \(title)"
+        content.body = "Time to complete: \(title)"
         content.sound = .default
 
         let comp = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: reminderDate)

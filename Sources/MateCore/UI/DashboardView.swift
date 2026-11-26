@@ -1,9 +1,9 @@
 import SwiftUI
 
 public enum DashboardScope: String, CaseIterable, Identifiable {
-    case today = "Hôm nay"
-    case tomorrow = "Ngày mai"
-    case week = "Cả tuần"
+    case today = "Today"
+    case tomorrow = "Tomorrow"
+    case week = "This Week"
 
     public var id: String { rawValue }
 }
@@ -23,69 +23,8 @@ public struct DashboardView: View {
         initialTasks: [TaskItem] = [],
         initialBlocks: [TimeBlock] = []
     ) {
-        _tasks = State(initialValue: initialTasks.isEmpty ? DashboardView.defaultStarterTasks : initialTasks)
-        _scheduledBlocks = State(initialValue: initialBlocks.isEmpty ? DashboardView.defaultStarterBlocks : initialBlocks)
-    }
-
-    private static var defaultStarterTasks: [TaskItem] {
-        let now = Date()
-        let cal = Calendar.current
-        let today18 = cal.date(bySettingHour: 18, minute: 0, second: 0, of: now)
-        let tmr10 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 10, minute: 0, second: 0, of: now) ?? now)
-        let friday = cal.date(byAdding: .day, value: 3, to: cal.date(bySettingHour: 17, minute: 0, second: 0, of: now) ?? now)
-
-        return [
-            TaskItem(
-                title: "Hoàn thành slide báo cáo",
-                category: "Work",
-                deadline: today18,
-                estimatedDuration: 60 * 60,
-                priority: .high,
-                status: .planned
-            ),
-            TaskItem(
-                title: "Gọi cho mẹ tối nay",
-                category: "Personal",
-                deadline: cal.date(bySettingHour: 20, minute: 0, second: 0, of: now),
-                estimatedDuration: 15 * 60,
-                priority: .medium,
-                status: .planned
-            ),
-            TaskItem(
-                title: "Gặp thảo luận hợp đồng với Nam",
-                category: "Meeting",
-                deadline: tmr10,
-                estimatedDuration: 45 * 60,
-                priority: .urgent,
-                status: .planned
-            ),
-            TaskItem(
-                title: "Tập thể dục 3 lần tuần này",
-                category: "Health & Routine",
-                deadline: friday,
-                estimatedDuration: 45 * 60,
-                priority: .medium,
-                status: .planned,
-                recurrenceRule: "3x_weekly"
-            )
-        ]
-    }
-
-    private static var defaultStarterBlocks: [TimeBlock] {
-        let now = Date()
-        let cal = Calendar.current
-        let today10 = cal.date(bySettingHour: 10, minute: 0, second: 0, of: now) ?? now
-        let today11 = cal.date(bySettingHour: 11, minute: 0, second: 0, of: now) ?? now
-        let today14 = cal.date(bySettingHour: 14, minute: 0, second: 0, of: now) ?? now
-        let today15 = cal.date(bySettingHour: 15, minute: 0, second: 0, of: now) ?? now
-        let tmr9 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 9, minute: 30, second: 0, of: now) ?? now) ?? now
-        let tmr10 = cal.date(byAdding: .day, value: 1, to: cal.date(bySettingHour: 10, minute: 30, second: 0, of: now) ?? now) ?? now
-
-        return [
-            TimeBlock(title: "Họp giao ban sáng", startTime: today10, endTime: today11, isLocked: true, category: "Work"),
-            TimeBlock(title: "Đồng bộ tiến độ dự án", startTime: today14, endTime: today15, isLocked: true, category: "Engineering"),
-            TimeBlock(title: "Hẹn cà phê trao đổi đối tác", startTime: tmr9, endTime: tmr10, isLocked: true, category: "Networking")
-        ]
+        _tasks = State(initialValue: initialTasks)
+        _scheduledBlocks = State(initialValue: initialBlocks)
     }
 
     public var body: some View {
@@ -154,7 +93,7 @@ public struct DashboardView: View {
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(MateTheme.opticWhite)
                     }
-                    .accessibilityLabel("Quét lịch hoặc danh thiếp")
+                    .accessibilityLabel("Scan schedule or notes")
                 }
             }
             .sheet(isPresented: $showingCaptureSheet) {
@@ -241,11 +180,11 @@ public struct DashboardView: View {
         let eventsCount = eventsForSelectedScope.count
 
         return HStack(spacing: 12) {
-            metricItem(title: "Cần làm", value: "\(remainingTasks)", icon: "checklist", color: .orange)
+            metricItem(title: "To Do", value: "\(remainingTasks)", icon: "checklist", color: .orange)
             Divider().frame(height: 32).background(MateTheme.microBorder)
-            metricItem(title: "Cuộc hẹn", value: "\(eventsCount)", icon: "calendar", color: .indigo)
+            metricItem(title: "Events", value: "\(eventsCount)", icon: "calendar", color: .indigo)
             Divider().frame(height: 32).background(MateTheme.microBorder)
-            metricItem(title: "Đã xong", value: "\(completedTasks)", icon: "checkmark.circle.fill", color: .green)
+            metricItem(title: "Done", value: "\(completedTasks)", icon: "checkmark.circle.fill", color: .green)
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 16)
@@ -265,7 +204,7 @@ public struct DashboardView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
                         .foregroundStyle(Color.yellow)
-                    Text("Gợi ý giờ rảnh & Lịch")
+                    Text("Suggest Free Time")
                         .font(.caption.bold())
                 }
                 .frame(maxWidth: .infinity)
@@ -283,7 +222,7 @@ public struct DashboardView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.up.arrow.down.square.fill")
                         .foregroundStyle(Color.blue)
-                    Text("Sắp xếp theo ưu tiên")
+                    Text("Sort by Priority")
                         .font(.caption.bold())
                 }
                 .frame(maxWidth: .infinity)
@@ -316,7 +255,7 @@ public struct DashboardView: View {
                 }
             }
             scheduledBlocks.sort { $0.startTime < $1.startTime }
-            toastBanner = "✓ Đã tối ưu hoá toàn bộ lịch theo độ ưu tiên"
+            toastBanner = "✓ Schedule optimized by priority"
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             withAnimation {
@@ -358,12 +297,12 @@ public struct DashboardView: View {
     private var tasksSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("VIỆC CẦN HOÀN THÀNH")
+                Text("TASKS TO DO")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
                 Spacer()
-                Text("\(tasksForSelectedScope.filter { $0.status != .completed }.count) việc")
+                Text("\(tasksForSelectedScope.filter { $0.status != .completed }.count) tasks")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(MateTheme.slateDim)
             }
@@ -373,7 +312,7 @@ public struct DashboardView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle")
                         .foregroundStyle(MateTheme.silverMuted)
-                    Text("Không có việc nào trong mục này. Bạn đang làm chủ thời gian!")
+                    Text("No pending tasks. You are in total control of your time!")
                         .font(.subheadline)
                         .foregroundStyle(MateTheme.silverMuted)
                 }
@@ -436,7 +375,7 @@ public struct DashboardView: View {
                     }
 
                     if task.priority == .urgent || task.priority == .high {
-                        Text(task.priority == .urgent ? "Khẩn" : "Quan trọng")
+                        Text(task.priority == .urgent ? "Urgent" : "High")
                             .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -462,12 +401,12 @@ public struct DashboardView: View {
     private var scheduleSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("LỊCH TRÌNH & CUỘC HẸN")
+                Text("SCHEDULE & MEETINGS")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
                 Spacer()
-                Text("\(eventsForSelectedScope.count) mục")
+                Text("\(eventsForSelectedScope.count) items")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(MateTheme.slateDim)
             }
@@ -477,7 +416,7 @@ public struct DashboardView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "calendar.badge.clock")
                         .foregroundStyle(MateTheme.silverMuted)
-                    Text("Không có cuộc hẹn. Bạn có trọn vẹn thời gian tập trung.")
+                    Text("No scheduled commitments for this period.")
                         .font(.subheadline)
                         .foregroundStyle(MateTheme.silverMuted)
                 }
@@ -502,7 +441,7 @@ public struct DashboardView: View {
         HStack(spacing: 14) {
             VStack(alignment: .trailing, spacing: 2) {
                 if selectedScope == .week {
-                    Text(block.startTime.formatted(.dateTime.weekday(.abbreviated)))
+                    Text(block.startTime.formatted(.dateTime.weekday(.abbreviated).locale(Locale(identifier: "en_US"))))
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundStyle(MateTheme.silverMuted)
                 }
@@ -526,7 +465,7 @@ public struct DashboardView: View {
                     .foregroundStyle(MateTheme.opticWhite)
 
                 HStack(spacing: 6) {
-                    Text("\(Int(block.duration / 60)) phút")
+                    Text("\(Int(block.duration / 60)) mins")
                         .font(.caption2)
                         .foregroundStyle(MateTheme.slateDim)
 
@@ -537,7 +476,7 @@ public struct DashboardView: View {
                     }
 
                     if block.isLocked {
-                        Label("Lịch", systemImage: "lock.fill")
+                        Label("Calendar", systemImage: "lock.fill")
                             .font(.caption2)
                             .foregroundStyle(MateTheme.slateDim)
                     }
@@ -565,7 +504,7 @@ public struct DashboardView: View {
             HStack(spacing: 12) {
                 Image(systemName: "plus")
                     .font(.system(size: 15, weight: .bold))
-                Text("Thêm Việc hoặc Lịch hẹn mới")
+                Text("Quick Add Task or Event")
                     .font(.system(size: 14, weight: .semibold))
                 Spacer()
                 Image(systemName: "mic.fill")

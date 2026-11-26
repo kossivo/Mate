@@ -14,6 +14,7 @@ public struct MateApp: App {
     public var body: some Scene {
         WindowGroup {
             MainTabView()
+                .environment(\.locale, Locale(identifier: "en_US"))
         }
     }
 }

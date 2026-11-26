@@ -267,7 +267,7 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
         // 6. Ambiguity check
         if deadline == nil && (lowercased.contains("finish") || lowercased.contains("complete") || lowercased.contains("hoàn thành") || lowercased.contains("xong")) {
             isAmbiguous = true
-            ambiguityNotes.append("Chưa rõ hạn chót — cần xác nhận thời gian.")
+            ambiguityNotes.append("Unclear deadline — please confirm target time.")
         }
 
         var cleanedTitle = cleanClause
@@ -276,7 +276,7 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             .capitalizedFirstLetter()
 
         if cleanedTitle.isEmpty || cleanedTitle.lowercased() == "hẹn" {
-            cleanedTitle = (itemType == .event) ? "Cuộc hẹn" : "Nhiệm vụ mới"
+            cleanedTitle = (itemType == .event) ? "Event" : "New Task"
         }
 
         return ParsedCaptureItem(
