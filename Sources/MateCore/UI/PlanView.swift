@@ -203,14 +203,14 @@ public struct PlanView: View {
     }
 
     private var taskRankingSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("RANK & PRIORITIZE TASKS")
+                    Text("PRIORITY & EXECUTION ORDER")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .tracking(1.2)
                         .foregroundStyle(MateTheme.silverMuted)
-                    Text("Tap priority to change, or use ↑ ↓ to rank execution order")
+                    Text("Tap priority or use ↑ ↓ to adjust order")
                         .font(.caption2)
                         .foregroundStyle(MateTheme.slateDim)
                 }
@@ -236,8 +236,8 @@ public struct PlanView: View {
                             .font(.system(size: 10, weight: .bold))
                     }
                     .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(MateTheme.elevatedCard)
+                    .padding(.vertical, 3.5)
+                    .background(MateTheme.cardBackground)
                     .foregroundStyle(MateTheme.silverMuted)
                     .clipShape(Capsule())
                     .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
@@ -245,43 +245,51 @@ public struct PlanView: View {
                 .buttonStyle(.plain)
             }
 
-            VStack(spacing: 10) {
+            VStack(spacing: 0) {
                 ForEach(Array(candidateTasks.enumerated()), id: \.element.id) { index, task in
+                    if index > 0 {
+                        Divider()
+                            .background(MateTheme.microBorder.opacity(0.6))
+                            .padding(.leading, 36)
+                    }
                     taskRankingRow(task: task, index: index)
                 }
             }
+            .background(MateTheme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1))
         }
     }
 
     private func taskRankingRow(task: TaskItem, index: Int) -> some View {
         let isScheduled = proposal.scheduledBlocks.contains(where: { $0.title == task.title })
 
-        return HStack(spacing: 12) {
+        return HStack(spacing: 10) {
             // Rank Number Badge
             Text("#\(index + 1)")
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundStyle(isScheduled ? MateTheme.opticWhite : MateTheme.slateDim)
-                .frame(width: 26)
+                .frame(width: 22)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
-                    .font(.body.weight(.medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(MateTheme.opticWhite)
                     .lineLimit(1)
 
-                HStack(spacing: 8) {
-                    Text("\(Int(task.estimatedDuration / 60)) mins")
-                        .font(.caption2)
+                HStack(spacing: 6) {
+                    Text("\(Int(task.estimatedDuration / 60))m")
+                        .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(MateTheme.slateDim)
 
                     if let d = task.deadline {
                         Text("Due " + d.formatted(date: .omitted, time: .shortened))
-                            .font(.caption2)
+                            .font(.system(size: 10))
                             .foregroundStyle(Color.red.opacity(0.85))
                     }
 
                     if isScheduled {
-                        Text("Fits Schedule")
+                        Text("Planned")
                             .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
@@ -289,7 +297,7 @@ public struct PlanView: View {
                             .foregroundStyle(Color.green)
                             .clipShape(Capsule())
                     } else {
-                        Text("No Free Slot")
+                        Text("No Slot")
                             .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
@@ -319,26 +327,22 @@ public struct PlanView: View {
                     Text(task.priority.title.uppercased())
                         .font(.system(size: 9, weight: .bold, design: .monospaced))
                         .foregroundStyle(MateTheme.priorityColor(task.priority))
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 7, weight: .bold))
-                        .foregroundStyle(MateTheme.slateDim)
                 }
-                .padding(.horizontal, 7)
-                .padding(.vertical, 4)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
                 .background(MateTheme.elevatedCard)
                 .clipShape(Capsule())
-                .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
             }
 
             // Up / Down Rank Reorder Buttons
-            HStack(spacing: 4) {
+            HStack(spacing: 2) {
                 Button {
                     moveTaskUp(at: index)
                 } label: {
                     Image(systemName: "chevron.up")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(index == 0 ? MateTheme.slateDim.opacity(0.4) : MateTheme.opticWhite)
-                        .frame(width: 26, height: 26)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(index == 0 ? MateTheme.slateDim.opacity(0.3) : MateTheme.opticWhite)
+                        .frame(width: 24, height: 24)
                         .background(MateTheme.elevatedCard)
                         .clipShape(Circle())
                 }
@@ -349,9 +353,9 @@ public struct PlanView: View {
                     moveTaskDown(at: index)
                 } label: {
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(index == candidateTasks.count - 1 ? MateTheme.slateDim.opacity(0.4) : MateTheme.opticWhite)
-                        .frame(width: 26, height: 26)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(index == candidateTasks.count - 1 ? MateTheme.slateDim.opacity(0.3) : MateTheme.opticWhite)
+                        .frame(width: 24, height: 24)
                         .background(MateTheme.elevatedCard)
                         .clipShape(Circle())
                 }
@@ -359,10 +363,8 @@ public struct PlanView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(12)
-        .background(MateTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MateTheme.microBorder, lineWidth: 1))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 
     private var unscheduledWarningCard: some View {
@@ -391,8 +393,8 @@ public struct PlanView: View {
     }
 
     private var timelineSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("UNIFIED DAY TIMELINE")
+        VStack(alignment: .leading, spacing: 10) {
+            Text("PROPOSED DAY SCHEDULE")
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .tracking(1.2)
                 .foregroundStyle(MateTheme.silverMuted)
@@ -403,11 +405,19 @@ public struct PlanView: View {
                     .foregroundStyle(MateTheme.slateDim)
                     .padding()
             } else {
-                VStack(spacing: 10) {
-                    ForEach(unifiedTimeline) { block in
+                VStack(spacing: 0) {
+                    ForEach(Array(unifiedTimeline.enumerated()), id: \.element.id) { index, block in
+                        if index > 0 {
+                            Divider()
+                                .background(MateTheme.microBorder.opacity(0.6))
+                                .padding(.leading, 70)
+                        }
                         timelineBlockRow(block)
                     }
                 }
+                .background(MateTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1))
             }
         }
     }
@@ -415,45 +425,46 @@ public struct PlanView: View {
     private func timelineBlockRow(_ block: TimeBlock) -> some View {
         let isExisting = existingBlocks.contains(where: { $0.id == block.id })
 
-        return HStack(spacing: 14) {
-            VStack(alignment: .trailing, spacing: 2) {
+        return HStack(spacing: 12) {
+            VStack(alignment: .trailing, spacing: 1) {
                 Text(block.startTime.formatted(date: .omitted, time: .shortened))
-                    .font(.caption.bold())
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(MateTheme.opticWhite)
                 Text(block.endTime.formatted(date: .omitted, time: .shortened))
-                    .font(.caption2)
+                    .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(MateTheme.slateDim)
             }
-            .frame(width: 56, alignment: .trailing)
+            .frame(width: 55, alignment: .trailing)
 
             Rectangle()
                 .fill(isExisting ? MateTheme.opticWhite : Color.green)
-                .frame(width: 3)
+                .frame(width: 2.5, height: 26)
                 .clipShape(Capsule())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(block.title)
-                    .font(.subheadline.bold())
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(MateTheme.opticWhite)
+                    .lineLimit(1)
 
                 HStack(spacing: 6) {
-                    Text("\(Int(block.duration / 60)) min session")
-                        .font(.caption2)
+                    Text("\(Int(block.duration / 60))m session")
+                        .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(MateTheme.slateDim)
 
                     if isExisting {
-                        Text("Calendar Event · Stays")
+                        Text("Calendar Event")
                             .font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1.5)
                             .background(MateTheme.elevatedCard)
                             .foregroundStyle(MateTheme.silverMuted)
                             .clipShape(Capsule())
                     } else {
                         Text("New Task Block")
                             .font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1.5)
                             .background(Color.green.opacity(0.18))
                             .foregroundStyle(Color.green)
                             .clipShape(Capsule())
@@ -462,9 +473,8 @@ public struct PlanView: View {
             }
             Spacer()
         }
-        .padding(12)
-        .background(MateTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MateTheme.microBorder, lineWidth: 1))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
+
 }

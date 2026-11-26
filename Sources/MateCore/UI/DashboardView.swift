@@ -54,10 +54,6 @@ public struct DashboardView: View {
                         summaryMetricsCard
                             .padding(.horizontal)
 
-                        // Smart Assistant Quick Actions
-                        smartActionBar
-                            .padding(.horizontal)
-
                         // Tasks to be done section
                         tasksSection
                             .padding(.horizontal)
@@ -109,6 +105,11 @@ public struct DashboardView: View {
                             showingScannerSheet = true
                         } label: {
                             Label("Scan Business Card / Doc", systemImage: "doc.viewfinder")
+                        }
+                        Button {
+                            showingSuggestFreeTimeSheet = true
+                        } label: {
+                            Label("Suggest Free Time", systemImage: "sparkles")
                         }
                     } label: {
                         Image(systemName: "note.text")
@@ -323,9 +324,9 @@ public struct DashboardView: View {
 
     private var tasksSection: some View {
         let filteredTasks = tasksForSelectedScope
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("TASKS TO DO")
+                Text("TASKS")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
@@ -337,7 +338,7 @@ public struct DashboardView: View {
                         #endif
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             store.sortTasksByPriority()
-                            toastBanner = "✓ Sorted by priority (Urgent → High → Med → Low)"
+                            toastBanner = "✓ Sorted by priority (Urgent → Low)"
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                             withAnimation { toastBanner = nil }
@@ -345,32 +346,32 @@ public struct DashboardView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.up.arrow.down")
-                                .font(.caption2.bold())
-                            Text("Sort by Priority")
+                                .font(.system(size: 10, weight: .bold))
+                            Text("Sort")
                                 .font(.system(size: 11, weight: .semibold))
                         }
-                        .foregroundStyle(MateTheme.opticWhite)
+                        .foregroundStyle(MateTheme.silverMuted)
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(MateTheme.elevatedCard)
+                        .padding(.vertical, 3.5)
+                        .background(MateTheme.cardBackground)
                         .clipShape(Capsule())
                         .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                 }
-                Text("\(filteredTasks.filter { $0.status != .completed }.count) tasks")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                Text("\(filteredTasks.filter { $0.status != .completed }.count) pending")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(MateTheme.slateDim)
             }
             if filteredTasks.isEmpty {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     Image(systemName: "checkmark.circle")
-                        .foregroundStyle(MateTheme.silverMuted)
-                    Text("No pending tasks. You are in total control of your time!")
+                        .foregroundStyle(MateTheme.slateDim)
+                    Text("No pending tasks. You are in total control.")
                         .font(.subheadline)
                         .foregroundStyle(MateTheme.silverMuted)
                 }
-                .padding()
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(MateTheme.cardBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -378,18 +379,28 @@ public struct DashboardView: View {
                     RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
                 )
             } else {
-                VStack(spacing: 10) {
-                    ForEach(filteredTasks) { task in
+                VStack(spacing: 0) {
+                    ForEach(Array(filteredTasks.enumerated()), id: \.element.id) { index, task in
+                        if index > 0 {
+                            Divider()
+                                .background(MateTheme.microBorder.opacity(0.6))
+                                .padding(.leading, 42)
+                        }
                         taskRow(task)
                     }
                 }
+                .background(MateTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
+                )
             }
         }
     }
 
     private func taskRow(_ task: TaskItem) -> some View {
         let isDone = task.status == .completed
-        return HStack(spacing: 14) {
+        return HStack(spacing: 12) {
             Button {
                 #if canImport(UIKit)
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -399,103 +410,96 @@ public struct DashboardView: View {
                 }
             } label: {
                 Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
+                    .font(.system(size: 19))
                     .foregroundStyle(isDone ? MateTheme.opticWhite : MateTheme.slateDim)
             }
             .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
-                    .font(.body.bold())
+                    .font(.system(size: 14, weight: .medium))
                     .strikethrough(isDone)
                     .foregroundStyle(isDone ? MateTheme.slateDim : MateTheme.opticWhite)
+                    .lineLimit(2)
 
                 HStack(spacing: 8) {
                     if let d = task.deadline {
                         Label(d.formatted(date: selectedScope == .week ? .abbreviated : .omitted, time: .shortened), systemImage: "clock")
-                            .font(.caption2.bold())
-                            .foregroundStyle(isDone ? MateTheme.slateDim : MateTheme.silverMuted)
+                            .font(.system(size: 11))
+                            .foregroundStyle(isDone ? MateTheme.slateDim : Color.red.opacity(0.85))
                     }
 
                     if let cat = task.category {
                         Text(cat)
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.vertical, 1.5)
                             .background(MateTheme.elevatedCard)
                             .foregroundStyle(MateTheme.silverMuted)
                             .clipShape(Capsule())
-                    }
-
-                    Menu {
-                        ForEach(TaskPriority.allCases, id: \.self) { p in
-                            Button {
-                                #if canImport(UIKit)
-                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                #endif
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    store.updateTaskPriority(taskId: task.id, priority: p)
-                                }
-                            } label: {
-                                Label(p.title, systemImage: p.iconName)
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(MateTheme.priorityColor(task.priority))
-                                .frame(width: 6, height: 6)
-                            Text(task.priority.title.uppercased())
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .foregroundStyle(MateTheme.priorityColor(task.priority))
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 7, weight: .bold))
-                                .foregroundStyle(MateTheme.slateDim)
-                        }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(MateTheme.elevatedCard)
-                        .clipShape(Capsule())
-                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
                     }
                 }
             }
 
             Spacer()
+
+            Menu {
+                ForEach(TaskPriority.allCases, id: \.self) { p in
+                    Button {
+                        #if canImport(UIKit)
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        #endif
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            store.updateTaskPriority(taskId: task.id, priority: p)
+                        }
+                    } label: {
+                        Label(p.title, systemImage: p.iconName)
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(MateTheme.priorityColor(task.priority))
+                        .frame(width: 6, height: 6)
+                    Text(task.priority.title.uppercased())
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundStyle(MateTheme.priorityColor(task.priority))
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3.5)
+                .background(MateTheme.elevatedCard)
+                .clipShape(Capsule())
+            }
         }
-        .padding(14)
-        .background(MateTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
-        )
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 
     // MARK: - Schedule Section
 
     private var scheduleSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let filteredEvents = eventsForSelectedScope
+        return VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("SCHEDULE & MEETINGS")
+                Text("SCHEDULE")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
                 Spacer()
-                Text("\(eventsForSelectedScope.count) items")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                Text("\(filteredEvents.count) items")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(MateTheme.slateDim)
             }
 
-            let filteredEvents = eventsForSelectedScope
             if filteredEvents.isEmpty {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     Image(systemName: "calendar.badge.clock")
-                        .foregroundStyle(MateTheme.silverMuted)
+                        .foregroundStyle(MateTheme.slateDim)
                     Text("No scheduled commitments for this period.")
                         .font(.subheadline)
                         .foregroundStyle(MateTheme.silverMuted)
                 }
-                .padding()
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(MateTheme.cardBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -503,76 +507,82 @@ public struct DashboardView: View {
                     RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
                 )
             } else {
-                VStack(spacing: 10) {
-                    ForEach(filteredEvents) { block in
+                VStack(spacing: 0) {
+                    ForEach(Array(filteredEvents.enumerated()), id: \.element.id) { index, block in
+                        if index > 0 {
+                            Divider()
+                                .background(MateTheme.microBorder.opacity(0.6))
+                                .padding(.leading, 70)
+                        }
                         eventRow(block)
                     }
                 }
+                .background(MateTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
+                )
             }
         }
     }
 
     private func eventRow(_ block: TimeBlock) -> some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .trailing, spacing: 2) {
+        HStack(spacing: 12) {
+            VStack(alignment: .trailing, spacing: 1) {
                 if selectedScope == .week {
                     Text(block.startTime.formatted(.dateTime.weekday(.abbreviated).locale(Locale(identifier: "en_US"))))
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
                         .foregroundStyle(MateTheme.silverMuted)
                 }
                 if block.isAllDay {
                     Text("All Day")
-                        .font(.caption.bold())
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(block.category == "Holiday" ? Color.orange : MateTheme.opticWhite)
                 } else {
                     Text(block.startTime.formatted(date: .omitted, time: .shortened))
-                        .font(.caption.bold())
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundStyle(MateTheme.opticWhite)
                     Text(block.endTime.formatted(date: .omitted, time: .shortened))
-                        .font(.caption2)
+                        .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(MateTheme.slateDim)
                 }
             }
-            .frame(width: selectedScope == .week ? 66 : 56, alignment: .trailing)
+            .frame(width: selectedScope == .week ? 64 : 55, alignment: .trailing)
 
             Rectangle()
                 .fill(block.isAllDay ? (block.category == "Holiday" ? Color.orange : MateTheme.silverMuted) : (block.isLocked ? MateTheme.opticWhite : MateTheme.slateDim))
-                .frame(width: 3)
+                .frame(width: 2.5, height: 26)
                 .clipShape(Capsule())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(block.title)
-                    .font(.subheadline.bold())
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(MateTheme.opticWhite)
+                    .lineLimit(1)
 
                 HStack(spacing: 6) {
                     if !block.isAllDay {
-                        Text("\(Int(block.duration / 60)) mins")
-                            .font(.caption2)
+                        Text("\(Int(block.duration / 60))m")
+                            .font(.system(size: 10, design: .monospaced))
                             .foregroundStyle(MateTheme.slateDim)
                     }
 
                     if let cat = block.category {
                         Text(cat)
-                            .font(.caption2)
+                            .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(cat == "Holiday" ? Color.orange : MateTheme.silverMuted)
-                    }
-
-                    if block.isLocked && !block.isAllDay {
-                        Label("Calendar", systemImage: "lock.fill")
-                            .font(.caption2)
-                            .foregroundStyle(MateTheme.slateDim)
                     }
                 }
             }
             Spacer()
+            if block.isLocked {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(MateTheme.slateDim)
+            }
         }
-        .padding(14)
-        .background(MateTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
-        )
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 
     // MARK: - Quick Add Floating Island
@@ -584,25 +594,24 @@ public struct DashboardView: View {
             #endif
             showingCaptureSheet = true
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Image(systemName: "plus")
-                    .font(.system(size: 15, weight: .bold))
-                Text("Quick Add Task or Event")
-                    .font(.system(size: 14, weight: .semibold))
-                Spacer()
-                Image(systemName: "mic.fill")
                     .font(.system(size: 13, weight: .bold))
+                Text("Capture")
+                    .font(.system(size: 13, weight: .semibold))
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(MateTheme.silverMuted)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .background(MateTheme.elevatedCard.opacity(0.95))
             .foregroundStyle(MateTheme.opticWhite)
             .clipShape(Capsule())
             .overlay(
-                Capsule().stroke(MateTheme.microBorder, lineWidth: 1.5)
+                Capsule().stroke(MateTheme.microBorder, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.6), radius: 16, x: 0, y: 8)
+            .shadow(color: Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
         }
         .buttonStyle(.plain)
     }

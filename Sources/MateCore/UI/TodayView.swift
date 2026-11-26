@@ -44,16 +44,13 @@ public struct TodayView: View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 20) {
                         headerSection
-                        dayArcTimeline.padding(.horizontal)
-                        allDayEventsBanner.padding(.horizontal)
-                        briefingCard.padding(.horizontal)
                         nextCommitmentCard.padding(.horizontal)
                         prioritiesSection.padding(.horizontal)
                         timelineSection.padding(.horizontal)
                     }
-                    .padding(.bottom, 110)
+                    .padding(.bottom, 90)
                 }
 
                 VStack(spacing: 8) {
@@ -91,6 +88,11 @@ public struct TodayView: View {
                             showingScannerSheet = true
                         } label: {
                             Label("Scan Business Card / Doc", systemImage: "doc.viewfinder")
+                        }
+                        Button {
+                            showingSuggestFreeTimeSheet = true
+                        } label: {
+                            Label("Suggest Free Time", systemImage: "sparkles")
                         }
                     } label: {
                         Image(systemName: "note.text")
@@ -168,122 +170,46 @@ public struct TodayView: View {
     // MARK: - Subviews
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(Date().formatted(.dateTime.weekday(.wide).month().day().locale(Locale(identifier: "en_US"))).uppercased())
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .tracking(1.5)
                 .foregroundStyle(MateTheme.silverMuted)
-            Text("Today's Overview")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(MateTheme.opticWhite)
+
+            HStack(alignment: .firstTextBaseline) {
+                Text("Today")
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(MateTheme.opticWhite)
+                Spacer()
+                if !tasks.isEmpty {
+                    Text("\(tasks.filter { $0.status == .completed }.count) of \(tasks.count) done")
+                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .foregroundStyle(MateTheme.silverMuted)
+                }
+            }
+
+            HStack(spacing: 8) {
+                Text(briefingStatusText)
+                    .font(.subheadline)
+                    .foregroundStyle(MateTheme.silverMuted)
+
+                if let holiday = allDayBlocks.first {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sun.max.fill")
+                            .font(.system(size: 10, weight: .bold))
+                        Text(holiday.title)
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.orange.opacity(0.18))
+                    .foregroundStyle(Color.orange)
+                    .clipShape(Capsule())
+                }
+            }
         }
         .padding(.horizontal)
         .padding(.top, 8)
-    }
-
-    private var dayArcTimeline: some View {
-        let prefs = UserPreference.load()
-        let startHour = prefs.workStartHour
-        let endHour = max(startHour + 1, prefs.workEndHour)
-        let totalSpan = max(1, endHour - startHour)
-        let currentHour = Calendar.current.component(.hour, from: Date())
-        let clampedHour = min(max(currentHour, startHour), endHour)
-        let progress = CGFloat(clampedHour - startHour) / CGFloat(totalSpan)
-        let startStr = String(format: "%02d:%02d", prefs.workStartHour, prefs.workStartMinute)
-        let endStr = String(format: "%02d:%02d", prefs.workEndHour, prefs.workEndMinute)
-
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("DAY CADENCE")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(MateTheme.slateDim)
-                Spacer()
-                Text("\(startStr) — \(endStr)")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(MateTheme.slateDim)
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(MateTheme.elevatedCard)
-                        .frame(height: 6)
-
-                    Capsule()
-                        .fill(MateTheme.opticWhite)
-                        .frame(width: max(geo.size.width * progress, 8), height: 6)
-                }
-            }
-            .frame(height: 6)
-        }
-    }
-
-    private var briefingCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label(greetingText, systemImage: isEvening ? "moon.stars.fill" : "sparkles")
-                    .font(.caption.bold())
-                    .foregroundStyle(isEvening ? Color.indigo : Color.white)
-                Spacer()
-                Text("\(tasks.filter { $0.status == .completed }.count) / \(tasks.count) Done")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(MateTheme.elevatedCard)
-                    .foregroundStyle(MateTheme.opticWhite)
-                    .clipShape(Capsule())
-            }
-
-            Text(briefingSummary)
-                .font(.subheadline)
-                .lineSpacing(3)
-                .foregroundStyle(MateTheme.opticWhite.opacity(0.9))
-
-            HStack(spacing: 8) {
-                Button {
-                    showingSuggestFreeTimeSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(Color.yellow)
-                        Text("Suggest Free Time")
-                            .font(.caption.bold())
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(MateTheme.elevatedCard)
-                    .foregroundStyle(MateTheme.opticWhite)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    reallocateTasksByPriority()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.up.arrow.down.square.fill")
-                            .foregroundStyle(Color.blue)
-                        Text("Sort by Priority")
-                            .font(.caption.bold())
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(MateTheme.elevatedCard)
-                    .foregroundStyle(MateTheme.opticWhite)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MateTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: MateTheme.cornerRadius))
-        .overlay(
-            RoundedRectangle(cornerRadius: MateTheme.cornerRadius)
-                .stroke(MateTheme.microBorder, lineWidth: 1)
-        )
     }
 
     private var timedCommitments: [TimeBlock] {
@@ -295,81 +221,53 @@ public struct TodayView: View {
     }
 
     @ViewBuilder
-    private var allDayEventsBanner: some View {
-        if !allDayBlocks.isEmpty {
-            VStack(spacing: 8) {
-                ForEach(allDayBlocks) { item in
-                    HStack(spacing: 10) {
-                        Image(systemName: item.category == "Holiday" ? "sun.max.fill" : "calendar")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(item.category == "Holiday" ? Color.orange : MateTheme.silverMuted)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.title)
-                                .font(.subheadline.bold())
-                                .foregroundStyle(MateTheme.opticWhite)
-                            Text(item.category == "Holiday" ? "Public Holiday · All Day" : "All-Day Event")
-                                .font(.caption2)
-                                .foregroundStyle(MateTheme.slateDim)
-                        }
-                        Spacer()
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(MateTheme.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(MateTheme.microBorder, lineWidth: 1)
-                    )
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
     private var nextCommitmentCard: some View {
         if let next = timedCommitments.first(where: { $0.endTime > Date() }) ?? timedCommitments.first {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Label("Next Up", systemImage: "clock.fill")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    Label("NEXT UP", systemImage: "clock.fill")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .tracking(1)
-                        .foregroundStyle(MateTheme.silverMuted)
+                        .foregroundStyle(MateTheme.assistantPulse)
                     Spacer()
-                    Text(next.startTime.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    Text(next.startTime.formatted(date: .omitted, time: .shortened) + " – " + next.endTime.formatted(date: .omitted, time: .shortened))
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .foregroundStyle(MateTheme.opticWhite)
                 }
                 Text(next.title)
-                    .font(.title3.bold())
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(MateTheme.opticWhite)
-                HStack {
-                    Text(next.category ?? "General")
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(MateTheme.elevatedCard)
-                        .foregroundStyle(MateTheme.silverMuted)
-                        .clipShape(Capsule())
+                    .lineLimit(1)
+
+                HStack(spacing: 8) {
+                    if let cat = next.category {
+                        Text(cat)
+                            .font(.system(size: 10, weight: .semibold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(MateTheme.elevatedCard)
+                            .foregroundStyle(MateTheme.silverMuted)
+                            .clipShape(Capsule())
+                    }
                     if next.isLocked {
                         Label("Calendar Event", systemImage: "lock.fill")
-                            .font(.caption2)
+                            .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(MateTheme.slateDim)
                     }
                 }
             }
-            .padding(18)
+            .padding(14)
             .background(MateTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: MateTheme.cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
-                RoundedRectangle(cornerRadius: MateTheme.cornerRadius)
+                RoundedRectangle(cornerRadius: 14)
                     .stroke(MateTheme.microBorder, lineWidth: 1)
             )
         }
     }
 
     private var prioritiesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("TOP PRIORITIES")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -383,7 +281,7 @@ public struct TodayView: View {
                         #endif
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             store.sortTasksByPriority()
-                            toastBanner = "✓ Sorted by priority (Urgent → High → Med → Low)"
+                            toastBanner = "✓ Sorted by priority (Urgent → Low)"
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                             withAnimation { toastBanner = nil }
@@ -391,14 +289,14 @@ public struct TodayView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.up.arrow.down")
-                                .font(.caption2.bold())
-                            Text("Sort by Priority")
+                                .font(.system(size: 10, weight: .bold))
+                            Text("Sort")
                                 .font(.system(size: 11, weight: .semibold))
                         }
-                        .foregroundStyle(MateTheme.opticWhite)
+                        .foregroundStyle(MateTheme.silverMuted)
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(MateTheme.elevatedCard)
+                        .padding(.vertical, 3.5)
+                        .background(MateTheme.cardBackground)
                         .clipShape(Capsule())
                         .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
                     }
@@ -407,14 +305,14 @@ public struct TodayView: View {
             }
 
             if tasks.isEmpty {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     Image(systemName: "checkmark.circle")
-                        .foregroundStyle(MateTheme.silverMuted)
+                        .foregroundStyle(MateTheme.slateDim)
                     Text("No pending tasks. You are in total flow.")
                         .font(.subheadline)
                         .foregroundStyle(MateTheme.silverMuted)
                 }
-                .padding()
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(MateTheme.cardBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -423,106 +321,129 @@ public struct TodayView: View {
                         .stroke(MateTheme.microBorder, lineWidth: 1)
                 )
             } else {
-                ForEach($store.tasks) { $task in
-                    HStack(spacing: 14) {
-                        Button {
-                            #if canImport(UIKit)
-                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                            #endif
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                                task.status = (task.status == .completed) ? .planned : .completed
-                                NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
-                            }
-                        } label: {
-                            Image(systemName: task.status == .completed ? "checkmark.circle.fill" : "circle")
-                                .font(.title3)
-                                .foregroundStyle(task.status == .completed ? MateTheme.opticWhite : MateTheme.slateDim)
+                VStack(spacing: 0) {
+                    ForEach(Array($store.tasks.enumerated()), id: \.element.id) { index, $task in
+                        if index > 0 {
+                            Divider()
+                                .background(MateTheme.microBorder.opacity(0.6))
+                                .padding(.leading, 42)
                         }
-                        .buttonStyle(.plain)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(task.title)
-                                .font(.body.weight(.medium))
-                                .strikethrough(task.status == .completed)
-                                .foregroundStyle(task.status == .completed ? MateTheme.slateDim : MateTheme.opticWhite)
-                            if let deadline = task.deadline {
-                                Text("Due " + deadline.formatted(date: .omitted, time: .shortened))
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.red.opacity(0.85))
-                            }
-                        }
-                        Spacer()
-                        Menu {
-                            ForEach(TaskPriority.allCases, id: \.self) { p in
-                                Button {
-                                    #if canImport(UIKit)
-                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                    #endif
-                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                        task.priority = p
-                                        store.updateTaskPriority(taskId: task.id, priority: p)
-                                    }
-                                } label: {
-                                    Label(p.title, systemImage: p.iconName)
-                                }
-                            }
-                        } label: {
-                            HStack(spacing: 5) {
-                                Circle()
-                                    .fill(MateTheme.priorityColor(task.priority))
-                                    .frame(width: 7, height: 7)
-                                Text(task.priority.title.uppercased())
-                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(MateTheme.priorityColor(task.priority))
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundStyle(MateTheme.slateDim)
-                            }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(MateTheme.elevatedCard)
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
-                        }
+                        taskRow(task: $task)
                     }
-                    .padding(16)
-                    .background(MateTheme.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(MateTheme.microBorder, lineWidth: 1)
-                    )
                 }
+                .background(MateTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MateTheme.microBorder, lineWidth: 1)
+                )
             }
         }
     }
 
+    private func taskRow(task: Binding<TaskItem>) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                #if canImport(UIKit)
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                #endif
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                    task.wrappedValue.status = (task.wrappedValue.status == .completed) ? .planned : .completed
+                    NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
+                }
+            } label: {
+                Image(systemName: task.wrappedValue.status == .completed ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 19))
+                    .foregroundStyle(task.wrappedValue.status == .completed ? MateTheme.opticWhite : MateTheme.slateDim)
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(task.wrappedValue.title)
+                    .font(.system(size: 14, weight: .medium))
+                    .strikethrough(task.wrappedValue.status == .completed)
+                    .foregroundStyle(task.wrappedValue.status == .completed ? MateTheme.slateDim : MateTheme.opticWhite)
+                    .lineLimit(2)
+
+                if let deadline = task.wrappedValue.deadline {
+                    Text("Due " + deadline.formatted(date: .omitted, time: .shortened))
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.red.opacity(0.85))
+                }
+            }
+
+            Spacer()
+
+            Menu {
+                ForEach(TaskPriority.allCases, id: \.self) { p in
+                    Button {
+                        #if canImport(UIKit)
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        #endif
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            task.wrappedValue.priority = p
+                            store.updateTaskPriority(taskId: task.wrappedValue.id, priority: p)
+                        }
+                    } label: {
+                        Label(p.title, systemImage: p.iconName)
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(MateTheme.priorityColor(task.wrappedValue.priority))
+                        .frame(width: 6, height: 6)
+                    Text(task.wrappedValue.priority.title.uppercased())
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundStyle(MateTheme.priorityColor(task.wrappedValue.priority))
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3.5)
+                .background(MateTheme.elevatedCard)
+                .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
     private var timelineSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("SCHEDULED TIMELINE")
+                Text("SCHEDULE")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
                 Spacer()
-                if !scheduledBlocks.isEmpty {
-                    Button("Optimize Day") {
-                        showingPlanSheet = true
+                Button {
+                    showingPlanSheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color.yellow)
+                        Text("Optimize")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(MateTheme.opticWhite)
                     }
-                    .font(.caption.bold())
-                    .foregroundStyle(MateTheme.opticWhite)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3.5)
+                    .background(MateTheme.cardBackground)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
                 }
+                .buttonStyle(.plain)
             }
 
             if timedCommitments.isEmpty {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     Image(systemName: "calendar.badge.clock")
-                        .foregroundStyle(MateTheme.silverMuted)
+                        .foregroundStyle(MateTheme.slateDim)
                     Text("No scheduled meetings. Open focus time available.")
                         .font(.subheadline)
                         .foregroundStyle(MateTheme.silverMuted)
                 }
-                .padding()
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(MateTheme.cardBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -531,37 +452,61 @@ public struct TodayView: View {
                         .stroke(MateTheme.microBorder, lineWidth: 1)
                 )
             } else {
-                ForEach(timedCommitments) { block in
-                    HStack(spacing: 16) {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(block.startTime.formatted(date: .omitted, time: .shortened))
-                                .font(.caption.bold())
-                                .foregroundStyle(MateTheme.opticWhite)
-                            Text(block.endTime.formatted(date: .omitted, time: .shortened))
-                                .font(.caption2)
-                                .foregroundStyle(MateTheme.slateDim)
+                VStack(spacing: 0) {
+                    ForEach(Array(timedCommitments.enumerated()), id: \.element.id) { index, block in
+                        if index > 0 {
+                            Divider()
+                                .background(MateTheme.microBorder.opacity(0.6))
+                                .padding(.leading, 70)
                         }
-                        .frame(width: 60, alignment: .trailing)
-
-                        Rectangle()
-                            .fill(block.isLocked ? MateTheme.opticWhite : MateTheme.slateDim)
-                            .frame(width: 3)
-                            .clipShape(Capsule())
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(block.title)
-                                .font(.subheadline.bold())
-                                .foregroundStyle(MateTheme.opticWhite)
-                            Text("\(Int(block.duration / 60)) mins")
-                                .font(.caption2)
-                                .foregroundStyle(MateTheme.slateDim)
-                        }
-                        Spacer()
+                        timelineRow(block: block)
                     }
-                    .padding(.vertical, 4)
                 }
+                .background(MateTheme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MateTheme.microBorder, lineWidth: 1)
+                )
             }
         }
+    }
+
+    private func timelineRow(block: TimeBlock) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(block.startTime.formatted(date: .omitted, time: .shortened))
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(MateTheme.opticWhite)
+                Text(block.endTime.formatted(date: .omitted, time: .shortened))
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(MateTheme.slateDim)
+            }
+            .frame(width: 55, alignment: .trailing)
+
+            Rectangle()
+                .fill(block.isLocked ? MateTheme.opticWhite : MateTheme.slateDim)
+                .frame(width: 2.5, height: 26)
+                .clipShape(Capsule())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(block.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(MateTheme.opticWhite)
+                    .lineLimit(1)
+                Text("\(Int(block.duration / 60))m")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(MateTheme.slateDim)
+            }
+            Spacer()
+            if block.isLocked {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(MateTheme.slateDim)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 
     private var floatingActionIsland: some View {
@@ -571,25 +516,24 @@ public struct TodayView: View {
             #endif
             showingCaptureSheet = true
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .bold))
-                Text("Quick Capture or Voice Note")
-                    .font(.system(size: 14, weight: .semibold))
-                Spacer()
-                Image(systemName: "mic.fill")
                     .font(.system(size: 13, weight: .bold))
+                Text("Capture")
+                    .font(.system(size: 13, weight: .semibold))
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(MateTheme.silverMuted)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .background(MateTheme.elevatedCard.opacity(0.95))
             .foregroundStyle(MateTheme.opticWhite)
             .clipShape(Capsule())
             .overlay(
-                Capsule().stroke(MateTheme.microBorder, lineWidth: 1.5)
+                Capsule().stroke(MateTheme.microBorder, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.6), radius: 16, x: 0, y: 8)
+            .shadow(color: Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
         }
         .buttonStyle(.plain)
     }
@@ -603,20 +547,22 @@ public struct TodayView: View {
         Calendar.current.component(.hour, from: Date()) >= 17
     }
 
-    private var greetingText: String {
-        isEvening ? "Evening Debrief" : "Morning Briefing"
-    }
-
-    private var briefingSummary: String {
+    private var briefingStatusText: String {
         let meetings = scheduledBlocks.filter { $0.isLocked && !$0.isAllDay }.count
         let remaining = tasks.filter { $0.status != .completed }.count
-        let holidayCount = allDayBlocks.count
-        let holidayNote = holidayCount > 0 ? " (plus \(holidayCount) all-day holiday)" : ""
         if isEvening {
-            return "You accomplished \(tasks.filter { $0.status == .completed }.count) tasks today. \(remaining) pending items can be auto-scheduled for tomorrow."
+            let completed = tasks.filter { $0.status == .completed }.count
+            return "\(completed) completed · \(remaining) pending"
         } else {
             let meetingWord = meetings == 1 ? "commitment" : "commitments"
-            return "You have \(meetings) calendar \(meetingWord)\(holidayNote) today and \(remaining) priority tasks waiting."
+            let taskWord = remaining == 1 ? "task" : "tasks"
+            if meetings == 0 && remaining == 0 {
+                return "Clear schedule · All tasks done"
+            } else if meetings == 0 {
+                return "\(remaining) \(taskWord) pending"
+            } else {
+                return "\(meetings) \(meetingWord) · \(remaining) \(taskWord) pending"
+            }
         }
     }
 
@@ -653,6 +599,7 @@ public struct TodayView: View {
         }
     }
 }
+
 
 public struct SuggestFreeTimeSheet: View {
     @Environment(\.dismiss) private var dismiss
