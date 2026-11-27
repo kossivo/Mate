@@ -123,10 +123,14 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
         var targetBaseDate: Date? = nil
         var dateDefaultHour: Int = 9
         var dateDefaultMinute: Int = 0
+        var isPMContext: Bool = false
+
+        let hasMaiWord = cleanClause.range(of: "(?i)(?<![\\p{L}])mai(?![\\p{L}])", options: .regularExpression) != nil
 
         if lowercased.contains("tonight") || lowercased.contains("tối nay") {
             targetBaseDate = referenceDate
             dateDefaultHour = 20
+            isPMContext = true
             cleanClause = cleanClause.replacingOccurrences(of: "(?i)tonight|tối nay", with: "", options: .regularExpression)
         } else if lowercased.contains("sáng mai") || lowercased.contains("tomorrow morning") {
             targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
@@ -136,19 +140,21 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
             dateDefaultHour = 14
             dateDefaultMinute = 30
+            isPMContext = true
             cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow afternoon|chiều mai", with: "", options: .regularExpression)
         } else if lowercased.contains("tối mai") || lowercased.contains("tomorrow evening") {
             targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
             dateDefaultHour = 20
+            isPMContext = true
             cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow evening|tối mai", with: "", options: .regularExpression)
-        } else if lowercased.contains("ngày kia") || lowercased.contains("ngày mốt") || lowercased.contains("mốt") {
+        } else if lowercased.contains("ngày kia") || lowercased.contains("ngày mốt") || cleanClause.range(of: "(?i)(?<![\\p{L}])mốt(?![\\p{L}])", options: .regularExpression) != nil {
             targetBaseDate = calendar.date(byAdding: .day, value: 2, to: referenceDate)
             dateDefaultHour = 9
-            cleanClause = cleanClause.replacingOccurrences(of: "(?i)ngày kia|ngày mốt|\\bmốt\\b", with: "", options: .regularExpression)
-        } else if lowercased.contains("tomorrow") || lowercased.contains("ngày mai") || lowercased.contains("mai") {
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)ngày kia|ngày mốt|(?<![\\p{L}])mốt(?![\\p{L}])", with: "", options: .regularExpression)
+        } else if lowercased.contains("tomorrow") || lowercased.contains("ngày mai") || hasMaiWord {
             targetBaseDate = calendar.date(byAdding: .day, value: 1, to: referenceDate)
             dateDefaultHour = 9
-            cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow|ngày mai|\\bmai\\b", with: "", options: .regularExpression)
+            cleanClause = cleanClause.replacingOccurrences(of: "(?i)tomorrow|ngày mai|(?<![\\p{L}])mai(?![\\p{L}])", with: "", options: .regularExpression)
         } else if lowercased.contains("today") || lowercased.contains("hôm nay") {
             targetBaseDate = referenceDate
             dateDefaultHour = 18
@@ -183,12 +189,16 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
             cleanClause = cleanClause.replacingOccurrences(of: "(?i)sunday|chủ nhật", with: "", options: .regularExpression)
         }
 
-        // 3. Exact Time Extraction
+        // 3. Exact Time Extraction (snapped to 00, 15, 30, 45)
         if let timeMatch = extractTimeValues(from: cleanClause) {
             let base = targetBaseDate ?? referenceDate
             var components = calendar.dateComponents([.year, .month, .day], from: base)
-            components.hour = timeMatch.hour
-            components.minute = timeMatch.minute
+            var hour = timeMatch.hour
+            if isPMContext && hour < 12 {
+                hour += 12
+            }
+            components.hour = hour
+            components.minute = SmartSchedulingEngine.snapMinuteTo15(timeMatch.minute)
             components.second = 0
 
             var resolvedDate = calendar.date(from: components) ?? base
@@ -201,7 +211,7 @@ public final class DeterministicCaptureParser: @unchecked Sendable {
         } else if let base = targetBaseDate {
             var components = calendar.dateComponents([.year, .month, .day], from: base)
             components.hour = dateDefaultHour
-            components.minute = dateDefaultMinute
+            components.minute = SmartSchedulingEngine.snapMinuteTo15(dateDefaultMinute)
             components.second = 0
             deadline = calendar.date(from: components) ?? base
         }

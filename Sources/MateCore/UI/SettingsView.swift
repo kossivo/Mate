@@ -17,17 +17,23 @@ public struct SettingsView: View {
                     DatePicker("Work Starts", selection: $workStartTime, displayedComponents: .hourAndMinute)
                         .onChange(of: workStartTime) { _, newValue in
                             let cal = Calendar.current
+                            let rawMin = cal.component(.minute, from: newValue)
+                            let snappedMin = SmartSchedulingEngine.snapMinuteTo15(rawMin)
                             preferences.workStartHour = cal.component(.hour, from: newValue)
-                            preferences.workStartMinute = cal.component(.minute, from: newValue)
+                            preferences.workStartMinute = snappedMin
                             preferences.save()
+                            syncDatesFromPreferences()
                         }
 
                     DatePicker("Work Ends", selection: $workEndTime, displayedComponents: .hourAndMinute)
                         .onChange(of: workEndTime) { _, newValue in
                             let cal = Calendar.current
+                            let rawMin = cal.component(.minute, from: newValue)
+                            let snappedMin = SmartSchedulingEngine.snapMinuteTo15(rawMin)
                             preferences.workEndHour = cal.component(.hour, from: newValue)
-                            preferences.workEndMinute = cal.component(.minute, from: newValue)
+                            preferences.workEndMinute = snappedMin
                             preferences.save()
+                            syncDatesFromPreferences()
                         }
 
                     HStack {

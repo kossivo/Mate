@@ -179,13 +179,19 @@ public final class AvailabilityEngine: @unchecked Sendable {
             return []
         }
 
-        guard let dayStart = calendar.date(bySettingHour: preferences.workStartHour, minute: preferences.workStartMinute, second: 0, of: date),
-              let dayEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: preferences.workEndMinute, second: 0, of: date),
-              dayStart < dayEnd else {
+        let startMin = SmartSchedulingEngine.snapMinuteTo15(preferences.workStartMinute)
+        let endMin = SmartSchedulingEngine.snapMinuteTo15(preferences.workEndMinute)
+
+        guard let rawStart = calendar.date(bySettingHour: preferences.workStartHour, minute: startMin, second: 0, of: date),
+              let rawEnd = calendar.date(bySettingHour: preferences.workEndHour, minute: endMin, second: 0, of: date),
+              rawStart < rawEnd else {
             return []
         }
 
-        let neededDuration = TimeInterval(durationMinutes * 60)
+        let dayStart = SmartSchedulingEngine.roundDownTo15Minutes(rawStart, calendar: calendar)
+        let dayEnd = SmartSchedulingEngine.roundDownTo15Minutes(rawEnd, calendar: calendar)
+
+        let neededDuration = SmartSchedulingEngine.snapDurationTo15Minutes(TimeInterval(durationMinutes * 60))
         let sorted = existingCommitments
             .filter { !$0.isAllDay && $0.endTime > dayStart && $0.startTime < dayEnd }
             .sorted { $0.startTime < $1.startTime }
@@ -195,33 +201,39 @@ public final class AvailabilityEngine: @unchecked Sendable {
 
         // If evaluating today and evalDate is in the middle of the day, pointer cannot be in the past
         if calendar.isDateInToday(date) && calendar.isDateInToday(evalDate) && evalDate > dayStart {
-            let bufferNow = evalDate.addingTimeInterval(15 * 60)
+            let bufferNow = SmartSchedulingEngine.roundUpTo15Minutes(evalDate.addingTimeInterval(15 * 60), calendar: calendar)
             if pointer < bufferNow {
                 pointer = bufferNow
             }
         }
 
-        let bufferSec = Double(preferences.meetingBufferMinutes * 60)
+        let bufferSec = Double(SmartSchedulingEngine.snapMinuteTo15(preferences.meetingBufferMinutes) * 60)
 
         for block in sorted {
-            let bufferedStart = block.startTime.addingTimeInterval(-bufferSec)
+            let bufferedStart = SmartSchedulingEngine.roundDownTo15Minutes(block.startTime.addingTimeInterval(-bufferSec), calendar: calendar)
 
             while pointer.addingTimeInterval(neededDuration) <= bufferedStart && slots.count < maxSlots {
-                let slotEnd = pointer.addingTimeInterval(neededDuration)
-                slots.append(FreeSlot(startTime: pointer, endTime: slotEnd))
-                pointer = slotEnd.addingTimeInterval(bufferSec)
+                let slotStart = SmartSchedulingEngine.roundUpTo15Minutes(pointer, calendar: calendar)
+                let slotEnd = slotStart.addingTimeInterval(neededDuration)
+                if slotEnd <= bufferedStart {
+                    slots.append(FreeSlot(startTime: slotStart, endTime: slotEnd))
+                }
+                pointer = SmartSchedulingEngine.roundUpTo15Minutes(slotEnd.addingTimeInterval(bufferSec), calendar: calendar)
             }
 
-            let bufferedEnd = block.endTime.addingTimeInterval(bufferSec)
+            let bufferedEnd = SmartSchedulingEngine.roundUpTo15Minutes(block.endTime.addingTimeInterval(bufferSec), calendar: calendar)
             if pointer < bufferedEnd {
                 pointer = bufferedEnd
             }
         }
 
         while pointer.addingTimeInterval(neededDuration) <= dayEnd && slots.count < maxSlots {
-            let slotEnd = pointer.addingTimeInterval(neededDuration)
-            slots.append(FreeSlot(startTime: pointer, endTime: slotEnd))
-            pointer = slotEnd.addingTimeInterval(bufferSec)
+            let slotStart = SmartSchedulingEngine.roundUpTo15Minutes(pointer, calendar: calendar)
+            let slotEnd = slotStart.addingTimeInterval(neededDuration)
+            if slotEnd <= dayEnd {
+                slots.append(FreeSlot(startTime: slotStart, endTime: slotEnd))
+            }
+            pointer = SmartSchedulingEngine.roundUpTo15Minutes(slotEnd.addingTimeInterval(bufferSec), calendar: calendar)
         }
 
         return slots

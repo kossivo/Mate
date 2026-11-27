@@ -142,4 +142,49 @@ struct DeterministicCaptureParserTests {
         #expect(!reportResults.isEmpty)
         #expect(reportResults[0].itemType == .task)
     }
+
+    @Test func testWordBoundaryDoesNotMatchEmailAsTomorrow() {
+        let parser = DeterministicCaptureParser()
+        let calendar = Calendar(identifier: .gregorian)
+        var comp = DateComponents()
+        comp.year = 2026
+        comp.month = 11
+        comp.day = 27
+        comp.hour = 10
+        comp.minute = 0
+        let refDate = calendar.date(from: comp)!
+
+        // "email" contains "mai" as a substring. It should NOT be treated as "tomorrow" (ngày mai)
+        let results = parser.parse(text: "Send email to client today", referenceDate: refDate)
+        #expect(results.count == 1)
+        guard let deadline = results[0].deadline else {
+            Issue.record("Expected deadline to be present")
+            return
+        }
+        let day = calendar.component(.day, from: deadline)
+        #expect(day == 27, "Deadline day must be 27 (today), not 28 (tomorrow)")
+    }
+
+    @Test func testEveningContextPreservedAsPM() {
+        let parser = DeterministicCaptureParser()
+        let calendar = Calendar(identifier: .gregorian)
+        var comp = DateComponents()
+        comp.year = 2026
+        comp.month = 11
+        comp.day = 27
+        comp.hour = 10
+        comp.minute = 0
+        let refDate = calendar.date(from: comp)!
+
+        let results = parser.parse(text: "Họp lúc 8h tối mai", referenceDate: refDate)
+        #expect(results.count == 1)
+        guard let deadline = results[0].deadline else {
+            Issue.record("Expected deadline to be present")
+            return
+        }
+        let hour = calendar.component(.hour, from: deadline)
+        let day = calendar.component(.day, from: deadline)
+        #expect(day == 28)
+        #expect(hour == 20, "8h tối must parse to 20:00 (8 PM), not 08:00 AM")
+    }
 }

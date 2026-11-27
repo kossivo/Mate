@@ -180,10 +180,16 @@ elif [ "$TARGET_MODE" = "device" ]; then
 
     echo -e "${GREEN}Target Physical Device:${NC} $DEVICE_UUID"
 
+    XCODE_DEST="$DEVICE_UUID"
+    if [[ "$DEVICE_UUID" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+        # When given a CoreDevice UUID (for devicectl), use generic/platform=iOS or physical UDID for xcodebuild
+        XCODE_DEST="generic/platform=iOS"
+    fi
+
     echo -e "${YELLOW}🔨 Building Mate for physical iOS Device (Debug)...${NC}"
     xcodebuild -project "$PROJECT_NAME" \
                -scheme "$SCHEME_NAME" \
-               -destination "id=$DEVICE_UUID" \
+               -destination "$XCODE_DEST" \
                -derivedDataPath "$DERIVED_DATA_PATH" \
                build -quiet
 

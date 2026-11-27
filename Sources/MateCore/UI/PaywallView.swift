@@ -102,6 +102,13 @@ public struct PaywallView: View {
                             }
                             .disabled(isProcessing || products.isEmpty)
 
+                            Text("Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. Payment is charged to your Apple ID account. You can manage or cancel subscriptions anytime in Apple ID Account Settings.")
+                                .font(.system(size: 10))
+                                .foregroundStyle(MateTheme.slateDim)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 8)
+                                .padding(.top, 4)
+
                             HStack(spacing: 16) {
                                 Button("Restore Purchases") {
                                     restorePurchases()
@@ -113,7 +120,7 @@ public struct PaywallView: View {
                                     .font(.caption)
                                     .foregroundStyle(MateTheme.slateDim)
 
-                                Link("Terms of Service", destination: URL(string: "https://mateapp.local/terms")!)
+                                Link("Terms of Service", destination: URL(string: "https://ngoctran.github.io/Mate/")!)
                                     .font(.caption)
                                     .foregroundStyle(MateTheme.silverMuted)
 
@@ -121,7 +128,7 @@ public struct PaywallView: View {
                                     .font(.caption)
                                     .foregroundStyle(MateTheme.slateDim)
 
-                                Link("Privacy Policy", destination: URL(string: "https://mateapp.local/privacy")!)
+                                Link("Privacy Policy", destination: URL(string: "https://ngoctran.github.io/Mate/")!)
                                     .font(.caption)
                                     .foregroundStyle(MateTheme.silverMuted)
                             }

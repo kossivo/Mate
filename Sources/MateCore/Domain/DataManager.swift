@@ -144,12 +144,16 @@ public final class DataManager: ObservableObject {
         scheduledBlocks.removeAll { $0.id == id }
     }
 
-    public func applyProposal(_ proposal: SchedulingProposal) {
+    public func applyProposal(_ proposal: SchedulingProposal, targetDate: Date = Date()) {
+        let calendar = Calendar.current
+        let otherDaysUnlocked = scheduledBlocks.filter { block in
+            !block.isLocked && !block.isAllDay && !calendar.isDate(block.startTime, inSameDayAs: targetDate)
+        }
         let existingLocked = scheduledBlocks.filter { $0.isLocked || $0.isAllDay }
         let newPlannedTasks = proposal.scheduledBlocks.filter { block in
             !existingLocked.contains { $0.title == block.title && $0.startTime == block.startTime }
         }
-        scheduledBlocks = (existingLocked + newPlannedTasks).sorted { $0.startTime < $1.startTime }
+        scheduledBlocks = (existingLocked + otherDaysUnlocked + newPlannedTasks).sorted { $0.startTime < $1.startTime }
     }
 
     // MARK: - Note Actions

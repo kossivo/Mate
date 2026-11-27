@@ -13,6 +13,7 @@ public struct TodayView: View {
     @State private var showingShareAvailabilitySheet: Bool = false
     @State private var showingScannerSheet: Bool = false
     @State private var showingNotesSheet: Bool = false
+    @State private var showingCompletedTasks: Bool = false
     @State private var availabilityMessage: String = ""
     @State private var toastBanner: String? = nil
 
@@ -42,18 +43,19 @@ public struct TodayView: View {
 
     public var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
+            ZStack(alignment: .bottomTrailing) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         headerSection
-                        nextCommitmentCard.padding(.horizontal)
+                        heroCommitmentCard.padding(.horizontal)
                         prioritiesSection.padding(.horizontal)
                         timelineSection.padding(.horizontal)
                     }
-                    .padding(.bottom, 90)
+                    .padding(.bottom, 80)
                 }
 
-                VStack(spacing: 8) {
+                // Floating Bottom Trailing Capture Orb
+                VStack(alignment: .trailing, spacing: 12) {
                     if let toast = toastBanner {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
@@ -70,38 +72,15 @@ public struct TodayView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
 
-                    floatingActionIsland
+                    captureOrb
                 }
-                .padding(.horizontal)
+                .padding(.trailing, 20)
                 .padding(.bottom, 16)
             }
             .background(MateTheme.pureBlack.ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            showingNotesSheet = true
-                        } label: {
-                            Label("Quick Notes & Scratchpad", systemImage: "note.text")
-                        }
-                        Button {
-                            showingScannerSheet = true
-                        } label: {
-                            Label("Scan Business Card / Doc", systemImage: "doc.viewfinder")
-                        }
-                        Button {
-                            showingSuggestFreeTimeSheet = true
-                        } label: {
-                            Label("Suggest Free Time", systemImage: "sparkles")
-                        }
-                    } label: {
-                        Image(systemName: "note.text")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(MateTheme.opticWhite)
-                    } primaryAction: {
-                        showingNotesSheet = true
-                    }
-                    .accessibilityLabel("Notes and Scanner")
+                    toolbarMenu
                 }
             }
             .sheet(isPresented: $showingNotesSheet) {
@@ -169,6 +148,63 @@ public struct TodayView: View {
 
     // MARK: - Subviews
 
+    private var toolbarMenu: some View {
+        Menu {
+            Button {
+                showingNotesSheet = true
+            } label: {
+                Label("Quick Notes & Scratchpad", systemImage: "note.text")
+            }
+            Button {
+                showingPlanSheet = true
+            } label: {
+                Label("Optimize Schedule", systemImage: "sparkles")
+            }
+            Button {
+                showingSuggestFreeTimeSheet = true
+            } label: {
+                Label("Suggest Free Time", systemImage: "clock.badge.checkmark")
+            }
+            Button {
+                showingScannerSheet = true
+            } label: {
+                Label("Scan Card / Document", systemImage: "doc.viewfinder")
+            }
+            Button {
+                generateAvailability()
+                showingShareAvailabilitySheet = true
+            } label: {
+                Label("Share Free Time", systemImage: "square.and.arrow.up")
+            }
+        } label: {
+            Image(systemName: "note.text")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(MateTheme.opticWhite)
+        } primaryAction: {
+            showingNotesSheet = true
+        }
+        .accessibilityLabel("Assistant Menu")
+    }
+
+    private var captureOrb: some View {
+        Button {
+            #if canImport(UIKit)
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            #endif
+            showingCaptureSheet = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(MateTheme.pureBlack)
+                .frame(width: 52, height: 52)
+                .background(MateTheme.opticWhite)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Quick Capture")
+    }
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(Date().formatted(.dateTime.weekday(.wide).month().day().locale(Locale(identifier: "en_US"))).uppercased())
@@ -182,7 +218,8 @@ public struct TodayView: View {
                     .foregroundStyle(MateTheme.opticWhite)
                 Spacer()
                 if !tasks.isEmpty {
-                    Text("\(tasks.filter { $0.status == .completed }.count) of \(tasks.count) done")
+                    let completed = tasks.filter { $0.status == .completed }.count
+                    Text("\(completed) of \(tasks.count) done")
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
                         .foregroundStyle(MateTheme.silverMuted)
                 }
@@ -221,40 +258,78 @@ public struct TodayView: View {
     }
 
     @ViewBuilder
-    private var nextCommitmentCard: some View {
-        if let next = timedCommitments.first(where: { $0.endTime > Date() }) ?? timedCommitments.first {
-            VStack(alignment: .leading, spacing: 8) {
+    private var heroCommitmentCard: some View {
+        let now = Date()
+        let activeBlock = timedCommitments.first(where: { $0.startTime <= now && $0.endTime > now })
+        let nextBlock = timedCommitments.first(where: { $0.startTime > now })
+
+        if let hero = activeBlock ?? nextBlock {
+            let isCurrent = activeBlock != nil
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Label("NEXT UP", systemImage: "clock.fill")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .tracking(1)
-                        .foregroundStyle(MateTheme.assistantPulse)
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(isCurrent ? Color.green : MateTheme.assistantPulse)
+                            .frame(width: 7, height: 7)
+                        Text(isCurrent ? "HAPPENING NOW" : "NEXT UP")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .tracking(1)
+                            .foregroundStyle(isCurrent ? Color.green : MateTheme.assistantPulse)
+                    }
                     Spacer()
-                    Text(next.startTime.formatted(date: .omitted, time: .shortened) + " – " + next.endTime.formatted(date: .omitted, time: .shortened))
+                    Text(hero.startTime.formatted(date: .omitted, time: .shortened) + " – " + hero.endTime.formatted(date: .omitted, time: .shortened))
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .foregroundStyle(MateTheme.opticWhite)
                 }
-                Text(next.title)
-                    .font(.system(size: 16, weight: .bold))
+
+                Text(hero.title)
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(MateTheme.opticWhite)
-                    .lineLimit(1)
+                    .lineLimit(2)
 
                 HStack(spacing: 8) {
-                    if let cat = next.category {
+                    if let cat = hero.category {
                         Text(cat)
                             .font(.system(size: 10, weight: .semibold))
                             .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
+                            .padding(.vertical, 2.5)
                             .background(MateTheme.elevatedCard)
                             .foregroundStyle(MateTheme.silverMuted)
                             .clipShape(Capsule())
                     }
-                    if next.isLocked {
+                    if hero.isLocked {
                         Label("Calendar Event", systemImage: "lock.fill")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(MateTheme.slateDim)
+                    } else {
+                        Label("Focus Session", systemImage: "sparkles")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(MateTheme.assistantPulse)
                     }
                 }
+            }
+            .padding(16)
+            .background(MateTheme.elevatedCard)
+            .clipShape(RoundedRectangle(cornerRadius: MateTheme.cornerRadius))
+            .overlay(
+                RoundedRectangle(cornerRadius: MateTheme.cornerRadius)
+                    .stroke(MateTheme.microBorder, lineWidth: 1)
+            )
+        } else {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.green.opacity(0.8))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Schedule Clear")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(MateTheme.opticWhite)
+                    Text("No upcoming meetings today. Prime time for deep work.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(MateTheme.silverMuted)
+                }
+                Spacer()
             }
             .padding(14)
             .background(MateTheme.cardBackground)
@@ -264,6 +339,14 @@ public struct TodayView: View {
                     .stroke(MateTheme.microBorder, lineWidth: 1)
             )
         }
+    }
+
+    private var pendingTasks: [TaskItem] {
+        tasks.filter { $0.status != .completed }
+    }
+
+    private var completedTasks: [TaskItem] {
+        tasks.filter { $0.status == .completed }
     }
 
     private var prioritiesSection: some View {
@@ -322,13 +405,55 @@ public struct TodayView: View {
                 )
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array($store.tasks.enumerated()), id: \.element.id) { index, $task in
-                        if index > 0 {
-                            Divider()
-                                .background(MateTheme.microBorder.opacity(0.6))
-                                .padding(.leading, 42)
+                    if pendingTasks.isEmpty {
+                        HStack(spacing: 10) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("All tasks completed for today!")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(MateTheme.opticWhite)
                         }
-                        taskRow(task: $task)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        ForEach(Array(pendingTasks.enumerated()), id: \.element.id) { index, task in
+                            if index > 0 {
+                                Divider()
+                                    .background(MateTheme.hairlineDivider)
+                                    .padding(.leading, 46)
+                            }
+                            taskRow(task: task)
+                        }
+                    }
+
+                    // Collapsible completed tasks section
+                    if !completedTasks.isEmpty {
+                        Divider().background(MateTheme.hairlineDivider)
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                showingCompletedTasks.toggle()
+                            }
+                        } label: {
+                            HStack {
+                                Text("\(completedTasks.count) completed today")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(MateTheme.slateDim)
+                                Spacer()
+                                Image(systemName: showingCompletedTasks ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(MateTheme.slateDim)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.plain)
+
+                        if showingCompletedTasks {
+                            ForEach(completedTasks) { task in
+                                Divider().background(MateTheme.hairlineDivider).padding(.leading, 46)
+                                completedTaskRow(task: task)
+                            }
+                        }
                     }
                 }
                 .background(MateTheme.cardBackground)
@@ -341,34 +466,39 @@ public struct TodayView: View {
         }
     }
 
-    private func taskRow(task: Binding<TaskItem>) -> some View {
+    private func taskRow(task: TaskItem) -> some View {
         HStack(spacing: 12) {
             Button {
                 #if canImport(UIKit)
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 #endif
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                    task.wrappedValue.status = (task.wrappedValue.status == .completed) ? .planned : .completed
+                    store.toggleTaskCompletion(task)
                     NotificationManager.shared.updateBadgeCount(tasks.filter { $0.status != .completed }.count)
                 }
             } label: {
-                Image(systemName: task.wrappedValue.status == .completed ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 19))
-                    .foregroundStyle(task.wrappedValue.status == .completed ? MateTheme.opticWhite : MateTheme.slateDim)
+                Image(systemName: "circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(MateTheme.slateDim)
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(task.wrappedValue.title)
+                Text(task.title)
                     .font(.system(size: 14, weight: .medium))
-                    .strikethrough(task.wrappedValue.status == .completed)
-                    .foregroundStyle(task.wrappedValue.status == .completed ? MateTheme.slateDim : MateTheme.opticWhite)
+                    .foregroundStyle(MateTheme.opticWhite)
                     .lineLimit(2)
 
-                if let deadline = task.wrappedValue.deadline {
-                    Text("Due " + deadline.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.red.opacity(0.85))
+                HStack(spacing: 6) {
+                    if let deadline = task.deadline {
+                        Text("Due " + deadline.formatted(date: .omitted, time: .shortened))
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.red.opacity(0.85))
+                    }
+                    Text("\(Int(task.estimatedDuration / 60))m")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(MateTheme.slateDim)
                 }
             }
 
@@ -381,36 +511,113 @@ public struct TodayView: View {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         #endif
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            task.wrappedValue.priority = p
-                            store.updateTaskPriority(taskId: task.wrappedValue.id, priority: p)
+                            store.updateTaskPriority(taskId: task.id, priority: p)
                         }
                     } label: {
                         Label(p.title, systemImage: p.iconName)
                     }
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(MateTheme.priorityColor(task.wrappedValue.priority))
-                        .frame(width: 6, height: 6)
-                    Text(task.wrappedValue.priority.title.uppercased())
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .foregroundStyle(MateTheme.priorityColor(task.wrappedValue.priority))
-                }
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3.5)
-                .background(MateTheme.elevatedCard)
-                .clipShape(Capsule())
+                jewelPriorityBadge(for: task.priority)
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.vertical, 11)
+    }
+
+    private func completedTaskRow(task: TaskItem) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                #if canImport(UIKit)
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                #endif
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                    store.toggleTaskCompletion(task)
+                }
+            } label: {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(MateTheme.opticWhite.opacity(0.6))
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.plain)
+
+            Text(task.title)
+                .font(.system(size: 13))
+                .strikethrough()
+                .foregroundStyle(MateTheme.slateDim)
+                .lineLimit(1)
+
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+    }
+
+    @ViewBuilder
+    private func jewelPriorityBadge(for priority: TaskPriority) -> some View {
+        switch priority {
+        case .urgent:
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 10))
+                Text("URGENT")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+            }
+            .foregroundStyle(MateTheme.priorityColor(.urgent))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3.5)
+            .background(MateTheme.elevatedCard)
+            .clipShape(Capsule())
+
+        case .high:
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(MateTheme.priorityColor(.high))
+                    .frame(width: 6, height: 6)
+                Text("HIGH")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+            }
+            .foregroundStyle(MateTheme.priorityColor(.high))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3.5)
+            .background(MateTheme.elevatedCard)
+            .clipShape(Capsule())
+
+        case .medium:
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(MateTheme.opticWhite)
+                    .frame(width: 5, height: 5)
+                Text("MED")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+            }
+            .foregroundStyle(MateTheme.silverMuted)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3.5)
+            .background(MateTheme.elevatedCard)
+            .clipShape(Capsule())
+
+        case .low:
+            HStack(spacing: 4) {
+                Circle()
+                    .stroke(MateTheme.slateDim, lineWidth: 1)
+                    .frame(width: 5, height: 5)
+                Text("LOW")
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+            }
+            .foregroundStyle(MateTheme.slateDim)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3.5)
+            .background(MateTheme.elevatedCard)
+            .clipShape(Capsule())
+        }
     }
 
     private var timelineSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("SCHEDULE")
+                Text("TODAY'S SCHEDULE")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
@@ -456,7 +663,7 @@ public struct TodayView: View {
                     ForEach(Array(timedCommitments.enumerated()), id: \.element.id) { index, block in
                         if index > 0 {
                             Divider()
-                                .background(MateTheme.microBorder.opacity(0.6))
+                                .background(MateTheme.hairlineDivider)
                                 .padding(.leading, 70)
                         }
                         timelineRow(block: block)
@@ -485,7 +692,7 @@ public struct TodayView: View {
             .frame(width: 55, alignment: .trailing)
 
             Rectangle()
-                .fill(block.isLocked ? MateTheme.opticWhite : MateTheme.slateDim)
+                .fill(block.isLocked ? MateTheme.opticWhite : MateTheme.assistantPulse)
                 .frame(width: 2.5, height: 26)
                 .clipShape(Capsule())
 
@@ -507,35 +714,6 @@ public struct TodayView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-    }
-
-    private var floatingActionIsland: some View {
-        Button {
-            #if canImport(UIKit)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            #endif
-            showingCaptureSheet = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .bold))
-                Text("Capture")
-                    .font(.system(size: 13, weight: .semibold))
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(MateTheme.silverMuted)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(MateTheme.elevatedCard.opacity(0.95))
-            .foregroundStyle(MateTheme.opticWhite)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule().stroke(MateTheme.microBorder, lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
-        }
-        .buttonStyle(.plain)
     }
 
     @MainActor
@@ -575,28 +753,6 @@ public struct TodayView: View {
             maxSlots: 3
         )
         availabilityMessage = availabilityEngine.formatInvitationMessage(slots: slots, guestName: nil, locale: "en")
-    }
-
-    private func reallocateTasksByPriority() {
-        #if canImport(UIKit)
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-        #endif
-        let result = schedulingEngine.reallocateTasksByPriority(
-            tasks: tasks,
-            existingCommitments: scheduledBlocks,
-            preferences: UserPreference.load(),
-            targetDate: Date()
-        )
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            store.tasks = result.reallocatedTasks
-            store.applyProposal(result.proposal)
-            toastBanner = "✓ Schedule prioritized (Urgent → High → Med → Low)"
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            withAnimation {
-                toastBanner = nil
-            }
-        }
     }
 }
 

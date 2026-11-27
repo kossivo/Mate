@@ -203,4 +203,70 @@ struct SmartSchedulingEngineTests {
         #expect(TaskPriority.high.title == "High")
         #expect(TaskPriority.allCases.count == 4)
     }
+
+    @Test func testFifteenMinuteGridSnapping() {
+        let engine = SmartSchedulingEngine()
+        let calendar = Calendar(identifier: .gregorian)
+
+        var comp = DateComponents()
+        comp.year = 2026
+        comp.month = 11
+        comp.day = 27
+        comp.hour = 9
+        comp.minute = 7 // Odd minute input
+        let oddStartDate = calendar.date(from: comp)!
+
+        let task1 = TaskItem(title: "Task 1", estimatedDuration: 1300, priority: .high) // ~21 min -> snap to >=15m (30m)
+        let task2 = TaskItem(title: "Task 2", estimatedDuration: 2500, priority: .medium) // ~41 min -> snap to >=15m (45m)
+
+        let prefs = UserPreference(workStartHour: 9, workStartMinute: 0, workEndHour: 17, workEndMinute: 0)
+
+        let proposal = engine.schedule(
+            tasks: [task1, task2],
+            existingCommitments: [],
+            preferences: prefs,
+            targetDate: oddStartDate
+        )
+
+        let allowedMinutes = [0, 15, 30, 45]
+        for block in proposal.scheduledBlocks {
+            let startMin = calendar.component(.minute, from: block.startTime)
+            let endMin = calendar.component(.minute, from: block.endTime)
+            #expect(allowedMinutes.contains(startMin), "Block start minute \(startMin) must be 00, 15, 30, or 45")
+            #expect(allowedMinutes.contains(endMin), "Block end minute \(endMin) must be 00, 15, 30, or 45")
+        }
+    }
+
+    @Test func testMiddayRescueSchedulingDoesNotScheduleInPast() {
+        let engine = SmartSchedulingEngine()
+        let calendar = Calendar(identifier: .gregorian)
+
+        var comp = DateComponents()
+        comp.year = 2026
+        comp.month = 11
+        comp.day = 27
+        comp.hour = 13
+        comp.minute = 10 // 1:10 PM
+        let midday = calendar.date(from: comp)!
+
+        let task = TaskItem(title: "Urgent afternoon task", estimatedDuration: 1800, priority: .urgent)
+        let prefs = UserPreference(workStartHour: 9, workStartMinute: 0, workEndHour: 18, workEndMinute: 0)
+
+        let proposal = engine.schedule(
+            tasks: [task],
+            existingCommitments: [],
+            preferences: prefs,
+            targetDate: midday,
+            referenceDate: midday
+        )
+
+        #expect(proposal.scheduledBlocks.count == 1)
+        let block = proposal.scheduledBlocks[0]
+        // Must start at or after 13:15, NOT at 09:00 AM!
+        #expect(block.startTime >= midday)
+        let startHour = calendar.component(.hour, from: block.startTime)
+        let startMin = calendar.component(.minute, from: block.startTime)
+        #expect(startHour == 13)
+        #expect(startMin == 15)
+    }
 }

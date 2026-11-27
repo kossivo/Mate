@@ -124,13 +124,16 @@ public struct PlanView: View {
 
     // MARK: - Recalculate Scheduling Proposal
 
-    private func recalculateSchedule() {
+    private func recalculateSchedule(preserveOrder: Bool = false) {
         let prefs = UserPreference.load()
+        let now = Date()
         proposal = engine.schedule(
             tasks: candidateTasks,
             existingCommitments: existingBlocks,
             preferences: prefs,
-            targetDate: Date()
+            targetDate: now,
+            referenceDate: now,
+            preserveOrder: preserveOrder
         )
         isAnalyzing = false
     }
@@ -144,7 +147,7 @@ public struct PlanView: View {
         #endif
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             candidateTasks.swapAt(index, index - 1)
-            recalculateSchedule()
+            recalculateSchedule(preserveOrder: true)
         }
     }
 
@@ -155,7 +158,7 @@ public struct PlanView: View {
         #endif
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             candidateTasks.swapAt(index, index + 1)
-            recalculateSchedule()
+            recalculateSchedule(preserveOrder: true)
         }
     }
 
@@ -165,7 +168,7 @@ public struct PlanView: View {
         #endif
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             candidateTasks[index].priority = newPriority
-            recalculateSchedule()
+            recalculateSchedule(preserveOrder: true)
         }
     }
 
@@ -226,7 +229,7 @@ public struct PlanView: View {
                             }
                             return lhs.estimatedDuration < rhs.estimatedDuration
                         }
-                        recalculateSchedule()
+                        recalculateSchedule(preserveOrder: false)
                     }
                 } label: {
                     HStack(spacing: 4) {
@@ -249,7 +252,7 @@ public struct PlanView: View {
                 ForEach(Array(candidateTasks.enumerated()), id: \.element.id) { index, task in
                     if index > 0 {
                         Divider()
-                            .background(MateTheme.microBorder.opacity(0.6))
+                            .background(MateTheme.hairlineDivider)
                             .padding(.leading, 36)
                     }
                     taskRankingRow(task: task, index: index)
@@ -409,7 +412,7 @@ public struct PlanView: View {
                     ForEach(Array(unifiedTimeline.enumerated()), id: \.element.id) { index, block in
                         if index > 0 {
                             Divider()
-                                .background(MateTheme.microBorder.opacity(0.6))
+                                .background(MateTheme.hairlineDivider)
                                 .padding(.leading, 70)
                         }
                         timelineBlockRow(block)

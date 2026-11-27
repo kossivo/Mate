@@ -12,6 +12,7 @@ public enum MateTheme {
     public static let cardBackground = Color(red: 18/255, green: 18/255, blue: 20/255)
     public static let elevatedCard = Color(red: 26/255, green: 26/255, blue: 30/255)
     public static let microBorder = Color(red: 38/255, green: 38/255, blue: 42/255)
+    public static let hairlineDivider = Color.white.opacity(0.06)
     
     // Stark White & Cool Silver Accents
     public static let opticWhite = Color.white

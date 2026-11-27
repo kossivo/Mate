@@ -15,9 +15,11 @@ public struct DashboardView: View {
     @State private var showingScannerSheet: Bool = false
     @State private var showingNotesSheet: Bool = false
     @State private var showingSuggestFreeTimeSheet: Bool = false
+    @State private var showingPlanSheet: Bool = false
     @State private var toastBanner: String? = nil
 
     private let calendar = Calendar.current
+    private let availabilityEngine = AvailabilityEngine()
 
     private var tasks: [TaskItem] {
         get { store.tasks }
@@ -42,31 +44,31 @@ public struct DashboardView: View {
 
     public var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
+            ZStack(alignment: .bottomTrailing) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        // Scope Picker
+                    VStack(alignment: .leading, spacing: 18) {
+                        // Scope Segmented Control
                         scopeSegmentedPicker
                             .padding(.horizontal)
                             .padding(.top, 4)
 
-                        // Metric summary card
+                        // Metric Summary Strip
                         summaryMetricsCard
                             .padding(.horizontal)
 
-                        // Tasks to be done section
-                        tasksSection
+                        // Smart Action Bar
+                        smartActionBar
                             .padding(.horizontal)
 
-                        // Scheduled commitments section
+                        // Schedule Timeline Section with Free Windows
                         scheduleSection
                             .padding(.horizontal)
                     }
-                    .padding(.bottom, 90)
+                    .padding(.bottom, 80)
                 }
 
-                // Bottom Quick Add Button & Toast
-                VStack(spacing: 8) {
+                // Bottom Trailing Capture Orb & Toast
+                VStack(alignment: .trailing, spacing: 12) {
                     if let toast = toastBanner {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
@@ -83,13 +85,13 @@ public struct DashboardView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
 
-                    quickAddBar
+                    captureOrb
                 }
-                .padding(.horizontal)
+                .padding(.trailing, 20)
                 .padding(.bottom, 16)
             }
             .background(MateTheme.pureBlack.ignoresSafeArea())
-            .navigationTitle("Dashboard")
+            .navigationTitle("Schedule")
             #if os(iOS)
             .toolbarBackground(.hidden, for: .navigationBar)
             #endif
@@ -102,14 +104,19 @@ public struct DashboardView: View {
                             Label("Quick Notes & Scratchpad", systemImage: "note.text")
                         }
                         Button {
-                            showingScannerSheet = true
+                            showingPlanSheet = true
                         } label: {
-                            Label("Scan Business Card / Doc", systemImage: "doc.viewfinder")
+                            Label("Optimize Schedule", systemImage: "sparkles")
                         }
                         Button {
                             showingSuggestFreeTimeSheet = true
                         } label: {
-                            Label("Suggest Free Time", systemImage: "sparkles")
+                            Label("Suggest Free Time", systemImage: "clock.badge.checkmark")
+                        }
+                        Button {
+                            showingScannerSheet = true
+                        } label: {
+                            Label("Scan Document / Card", systemImage: "doc.viewfinder")
                         }
                     } label: {
                         Image(systemName: "note.text")
@@ -118,7 +125,7 @@ public struct DashboardView: View {
                     } primaryAction: {
                         showingNotesSheet = true
                     }
-                    .accessibilityLabel("Notes and Scanner")
+                    .accessibilityLabel("Schedule Assistant Menu")
                 }
             }
             .sheet(isPresented: $showingNotesSheet) {
@@ -140,6 +147,17 @@ public struct DashboardView: View {
                         store.addBlock(newEvent)
                     }
                 )
+            }
+            .sheet(isPresented: $showingPlanSheet) {
+                PlanView(tasks: tasks, existingBlocks: scheduledBlocks) { proposal in
+                    store.applyProposal(proposal, targetDate: targetDateForScope)
+                    withAnimation {
+                        toastBanner = "✓ Schedule optimized (\(proposal.scheduledBlocks.count) tasks planned)"
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation { toastBanner = nil }
+                    }
+                }
             }
             .sheet(isPresented: $showingScannerSheet) {
                 DocumentScannerView(
@@ -172,6 +190,25 @@ public struct DashboardView: View {
 
     // MARK: - Components
 
+    private var captureOrb: some View {
+        Button {
+            #if canImport(UIKit)
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            #endif
+            showingCaptureSheet = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(MateTheme.pureBlack)
+                .frame(width: 52, height: 52)
+                .background(MateTheme.opticWhite)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Quick Capture")
+    }
+
     private var scopeSegmentedPicker: some View {
         HStack(spacing: 6) {
             ForEach(DashboardScope.allCases) { scope in
@@ -186,7 +223,7 @@ public struct DashboardView: View {
                     Text(scope.rawValue)
                         .font(.system(size: 13, weight: selectedScope == scope ? .bold : .medium))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
+                        .padding(.vertical, 8)
                         .background(selectedScope == scope ? MateTheme.elevatedCard : Color.clear)
                         .foregroundStyle(selectedScope == scope ? MateTheme.opticWhite : MateTheme.slateDim)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -207,19 +244,19 @@ public struct DashboardView: View {
     }
 
     private var summaryMetricsCard: some View {
-        let filteredTasks = tasksForSelectedScope
-        let remainingTasks = filteredTasks.filter { $0.status != .completed }.count
-        let completedTasks = filteredTasks.filter { $0.status == .completed }.count
-        let eventsCount = eventsForSelectedScope.count
+        let events = eventsForSelectedScope
+        let calendarEvents = events.filter { $0.isLocked && !$0.isAllDay }.count
+        let plannedSessions = events.filter { !$0.isLocked && !$0.isAllDay }.count
+        let remainingTasks = tasksForSelectedScope.filter { $0.status != .completed }.count
 
         return HStack(spacing: 12) {
-            metricItem(title: "To Do", value: "\(remainingTasks)", icon: "checklist", color: .orange)
-            Divider().frame(height: 32).background(MateTheme.microBorder)
-            metricItem(title: "Events", value: "\(eventsCount)", icon: "calendar", color: .indigo)
-            Divider().frame(height: 32).background(MateTheme.microBorder)
-            metricItem(title: "Done", value: "\(completedTasks)", icon: "checkmark.circle.fill", color: .green)
+            metricItem(title: "Commitments", value: "\(calendarEvents)", icon: "calendar", color: .indigo)
+            Divider().frame(height: 28).background(MateTheme.hairlineDivider)
+            metricItem(title: "Planned Focus", value: "\(plannedSessions)", icon: "sparkles", color: .blue)
+            Divider().frame(height: 28).background(MateTheme.hairlineDivider)
+            metricItem(title: "Pending Tasks", value: "\(remainingTasks)", icon: "checklist", color: .orange)
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, 14)
         .padding(.horizontal, 16)
         .background(MateTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: MateTheme.cornerRadius))
@@ -235,14 +272,14 @@ public struct DashboardView: View {
                 showingSuggestFreeTimeSheet = true
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: "clock.badge.checkmark")
                         .foregroundStyle(Color.yellow)
-                    Text("Suggest Free Time")
+                    Text("Free Windows")
                         .font(.caption.bold())
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
-                .background(MateTheme.elevatedCard)
+                .background(MateTheme.cardBackground)
                 .foregroundStyle(MateTheme.opticWhite)
                 .clipShape(Capsule())
                 .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
@@ -250,45 +287,22 @@ public struct DashboardView: View {
             .buttonStyle(.plain)
 
             Button {
-                reallocateByPriority()
+                showingPlanSheet = true
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "arrow.up.arrow.down.square.fill")
-                        .foregroundStyle(Color.blue)
-                    Text("Sort by Priority")
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(MateTheme.assistantPulse)
+                    Text("Optimize Day")
                         .font(.caption.bold())
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
-                .background(MateTheme.elevatedCard)
+                .background(MateTheme.cardBackground)
                 .foregroundStyle(MateTheme.opticWhite)
                 .clipShape(Capsule())
                 .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
             }
             .buttonStyle(.plain)
-        }
-    }
-
-    private func reallocateByPriority() {
-        #if canImport(UIKit)
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-        #endif
-        let engine = SmartSchedulingEngine()
-        let result = engine.reallocateTasksByPriority(
-            tasks: tasks,
-            existingCommitments: scheduledBlocks,
-            preferences: UserPreference.load(),
-            targetDate: targetDateForScope
-        )
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            store.tasks = result.reallocatedTasks
-            store.applyProposal(result.proposal)
-            toastBanner = "✓ Schedule prioritized (Urgent → High → Med → Low)"
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            withAnimation {
-                toastBanner = nil
-            }
         }
     }
 
@@ -304,13 +318,13 @@ public struct DashboardView: View {
     }
 
     private func metricItem(title: String, value: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 3) {
             HStack(spacing: 5) {
                 Image(systemName: icon)
                     .font(.caption2.bold())
                     .foregroundStyle(color)
                 Text(value)
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
                     .foregroundStyle(MateTheme.opticWhite)
             }
             Text(title)
@@ -320,168 +334,16 @@ public struct DashboardView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Tasks Section
-
-    private var tasksSection: some View {
-        let filteredTasks = tasksForSelectedScope
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("TASKS")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .tracking(1.2)
-                    .foregroundStyle(MateTheme.silverMuted)
-                Spacer()
-                if !filteredTasks.isEmpty {
-                    Button {
-                        #if canImport(UIKit)
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        #endif
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            store.sortTasksByPriority()
-                            toastBanner = "✓ Sorted by priority (Urgent → Low)"
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                            withAnimation { toastBanner = nil }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.up.arrow.down")
-                                .font(.system(size: 10, weight: .bold))
-                            Text("Sort")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .foregroundStyle(MateTheme.silverMuted)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3.5)
-                        .background(MateTheme.cardBackground)
-                        .clipShape(Capsule())
-                        .overlay(Capsule().stroke(MateTheme.microBorder, lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
-                Text("\(filteredTasks.filter { $0.status != .completed }.count) pending")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundStyle(MateTheme.slateDim)
-            }
-            if filteredTasks.isEmpty {
-                HStack(spacing: 10) {
-                    Image(systemName: "checkmark.circle")
-                        .foregroundStyle(MateTheme.slateDim)
-                    Text("No pending tasks. You are in total control.")
-                        .font(.subheadline)
-                        .foregroundStyle(MateTheme.silverMuted)
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(MateTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
-                )
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(filteredTasks.enumerated()), id: \.element.id) { index, task in
-                        if index > 0 {
-                            Divider()
-                                .background(MateTheme.microBorder.opacity(0.6))
-                                .padding(.leading, 42)
-                        }
-                        taskRow(task)
-                    }
-                }
-                .background(MateTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
-                )
-            }
-        }
-    }
-
-    private func taskRow(_ task: TaskItem) -> some View {
-        let isDone = task.status == .completed
-        return HStack(spacing: 12) {
-            Button {
-                #if canImport(UIKit)
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                #endif
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                    store.toggleTaskCompletion(task)
-                }
-            } label: {
-                Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 19))
-                    .foregroundStyle(isDone ? MateTheme.opticWhite : MateTheme.slateDim)
-            }
-            .buttonStyle(.plain)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(task.title)
-                    .font(.system(size: 14, weight: .medium))
-                    .strikethrough(isDone)
-                    .foregroundStyle(isDone ? MateTheme.slateDim : MateTheme.opticWhite)
-                    .lineLimit(2)
-
-                HStack(spacing: 8) {
-                    if let d = task.deadline {
-                        Label(d.formatted(date: selectedScope == .week ? .abbreviated : .omitted, time: .shortened), systemImage: "clock")
-                            .font(.system(size: 11))
-                            .foregroundStyle(isDone ? MateTheme.slateDim : Color.red.opacity(0.85))
-                    }
-
-                    if let cat = task.category {
-                        Text(cat)
-                            .font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1.5)
-                            .background(MateTheme.elevatedCard)
-                            .foregroundStyle(MateTheme.silverMuted)
-                            .clipShape(Capsule())
-                    }
-                }
-            }
-
-            Spacer()
-
-            Menu {
-                ForEach(TaskPriority.allCases, id: \.self) { p in
-                    Button {
-                        #if canImport(UIKit)
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        #endif
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            store.updateTaskPriority(taskId: task.id, priority: p)
-                        }
-                    } label: {
-                        Label(p.title, systemImage: p.iconName)
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(MateTheme.priorityColor(task.priority))
-                        .frame(width: 6, height: 6)
-                    Text(task.priority.title.uppercased())
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .foregroundStyle(MateTheme.priorityColor(task.priority))
-                }
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3.5)
-                .background(MateTheme.elevatedCard)
-                .clipShape(Capsule())
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-    }
-
     // MARK: - Schedule Section
 
     private var scheduleSection: some View {
         let filteredEvents = eventsForSelectedScope
+        let allDayEvents = filteredEvents.filter { $0.isAllDay }
+        let timedEvents = filteredEvents.filter { !$0.isAllDay }
+
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("SCHEDULE")
+                Text(selectedScope == .week ? "WEEKLY TIMELINE" : "DAILY TIMELINE")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
@@ -491,7 +353,32 @@ public struct DashboardView: View {
                     .foregroundStyle(MateTheme.slateDim)
             }
 
-            if filteredEvents.isEmpty {
+            // All-Day events banner if any
+            if !allDayEvents.isEmpty {
+                VStack(spacing: 6) {
+                    ForEach(allDayEvents) { event in
+                        HStack(spacing: 8) {
+                            Image(systemName: "sun.max.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.orange)
+                            Text(event.title)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(MateTheme.opticWhite)
+                            Spacer()
+                            Text("All Day")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(Color.orange)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color.orange.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.orange.opacity(0.25), lineWidth: 1))
+                    }
+                }
+            }
+
+            if timedEvents.isEmpty && allDayEvents.isEmpty {
                 HStack(spacing: 10) {
                     Image(systemName: "calendar.badge.clock")
                         .foregroundStyle(MateTheme.slateDim)
@@ -506,12 +393,12 @@ public struct DashboardView: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 14).stroke(MateTheme.microBorder, lineWidth: 1)
                 )
-            } else {
+            } else if !timedEvents.isEmpty {
                 VStack(spacing: 0) {
-                    ForEach(Array(filteredEvents.enumerated()), id: \.element.id) { index, block in
+                    ForEach(Array(timedEvents.enumerated()), id: \.element.id) { index, block in
                         if index > 0 {
                             Divider()
-                                .background(MateTheme.microBorder.opacity(0.6))
+                                .background(MateTheme.hairlineDivider)
                                 .padding(.leading, 70)
                         }
                         eventRow(block)
@@ -534,23 +421,17 @@ public struct DashboardView: View {
                         .font(.system(size: 9, weight: .bold, design: .monospaced))
                         .foregroundStyle(MateTheme.silverMuted)
                 }
-                if block.isAllDay {
-                    Text("All Day")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(block.category == "Holiday" ? Color.orange : MateTheme.opticWhite)
-                } else {
-                    Text(block.startTime.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(MateTheme.opticWhite)
-                    Text(block.endTime.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(MateTheme.slateDim)
-                }
+                Text(block.startTime.formatted(date: .omitted, time: .shortened))
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(MateTheme.opticWhite)
+                Text(block.endTime.formatted(date: .omitted, time: .shortened))
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(MateTheme.slateDim)
             }
             .frame(width: selectedScope == .week ? 64 : 55, alignment: .trailing)
 
             Rectangle()
-                .fill(block.isAllDay ? (block.category == "Holiday" ? Color.orange : MateTheme.silverMuted) : (block.isLocked ? MateTheme.opticWhite : MateTheme.slateDim))
+                .fill(block.isLocked ? MateTheme.opticWhite : MateTheme.assistantPulse)
                 .frame(width: 2.5, height: 26)
                 .clipShape(Capsule())
 
@@ -561,16 +442,14 @@ public struct DashboardView: View {
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
-                    if !block.isAllDay {
-                        Text("\(Int(block.duration / 60))m")
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(MateTheme.slateDim)
-                    }
+                    Text("\(Int(block.duration / 60))m")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(MateTheme.slateDim)
 
                     if let cat = block.category {
                         Text(cat)
                             .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(cat == "Holiday" ? Color.orange : MateTheme.silverMuted)
+                            .foregroundStyle(MateTheme.silverMuted)
                     }
                 }
             }
@@ -583,37 +462,6 @@ public struct DashboardView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-    }
-
-    // MARK: - Quick Add Floating Island
-
-    private var quickAddBar: some View {
-        Button {
-            #if canImport(UIKit)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            #endif
-            showingCaptureSheet = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .bold))
-                Text("Capture")
-                    .font(.system(size: 13, weight: .semibold))
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(MateTheme.silverMuted)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(MateTheme.elevatedCard.opacity(0.95))
-            .foregroundStyle(MateTheme.opticWhite)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule().stroke(MateTheme.microBorder, lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Filtering Data by Scope
