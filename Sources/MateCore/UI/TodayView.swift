@@ -29,6 +29,62 @@ public struct TodayView: View {
         nonmutating set { store.scheduledBlocks = newValue }
     }
 
+    private var calendar: Calendar { Calendar.current }
+    private var startOfToday: Date { calendar.startOfDay(for: Date()) }
+    private var endOfToday: Date { calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? Date() }
+
+    /// All scheduled blocks occurring strictly today
+    private var todayScheduledBlocks: [TimeBlock] {
+        store.scheduledBlocks.filter { block in
+            block.endTime > startOfToday && block.startTime < endOfToday
+        }
+    }
+
+    /// Timed commitments strictly for today (meetings + focus sessions)
+    private var timedCommitments: [TimeBlock] {
+        todayScheduledBlocks
+            .filter { !$0.isAllDay }
+            .sorted { $0.startTime < $1.startTime }
+    }
+
+    /// All-day events / holidays occurring strictly today
+    private var allDayBlocks: [TimeBlock] {
+        todayScheduledBlocks.filter { $0.isAllDay }
+    }
+
+    /// Tasks that belong strictly to Today's view:
+    /// - Due today
+    /// - Overdue (due before today and not yet completed)
+    /// - Unscheduled floating tasks (no deadline)
+    /// - Tasks explicitly scheduled in a time block today
+    /// Excludes tasks whose deadline is tomorrow or further in the future!
+    private var todayTasks: [TaskItem] {
+        let scheduledTodayTaskIds = Set(todayScheduledBlocks.compactMap { $0.taskId })
+        return store.tasks.filter { task in
+            if scheduledTodayTaskIds.contains(task.id) {
+                return true
+            }
+            guard let deadline = task.deadline else {
+                return true // Floating task active for today
+            }
+            if calendar.isDateInToday(deadline) {
+                return true
+            }
+            if deadline < startOfToday && task.status != .completed {
+                return true
+            }
+            return false
+        }
+    }
+
+    private var pendingTasks: [TaskItem] {
+        todayTasks.filter { $0.status != .completed }
+    }
+
+    private var completedTasks: [TaskItem] {
+        todayTasks.filter { $0.status == .completed }
+    }
+
     public init(
         initialTasks: [TaskItem] = [],
         initialBlocks: [TimeBlock] = []
@@ -104,8 +160,8 @@ public struct TodayView: View {
                 )
             }
             .sheet(isPresented: $showingPlanSheet) {
-                PlanView(tasks: tasks, existingBlocks: scheduledBlocks) { proposal in
-                    store.applyProposal(proposal)
+                PlanView(tasks: todayTasks, existingBlocks: todayScheduledBlocks, targetDate: Date()) { proposal in
+                    store.applyProposal(proposal, targetDate: Date())
                     withAnimation {
                         toastBanner = "✓ Schedule optimized (\(proposal.scheduledBlocks.count) tasks planned)"
                     }
@@ -217,9 +273,8 @@ public struct TodayView: View {
                     .font(.system(size: 34, weight: .bold))
                     .foregroundStyle(MateTheme.opticWhite)
                 Spacer()
-                if !tasks.isEmpty {
-                    let completed = tasks.filter { $0.status == .completed }.count
-                    Text("\(completed) of \(tasks.count) done")
+                if !todayTasks.isEmpty {
+                    Text("\(completedTasks.count) of \(todayTasks.count) done")
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
                         .foregroundStyle(MateTheme.silverMuted)
                 }
@@ -249,19 +304,11 @@ public struct TodayView: View {
         .padding(.top, 8)
     }
 
-    private var timedCommitments: [TimeBlock] {
-        scheduledBlocks.filter { !$0.isAllDay }
-    }
-
-    private var allDayBlocks: [TimeBlock] {
-        scheduledBlocks.filter { $0.isAllDay }
-    }
-
     @ViewBuilder
     private var heroCommitmentCard: some View {
         let now = Date()
         let activeBlock = timedCommitments.first(where: { $0.startTime <= now && $0.endTime > now })
-        let nextBlock = timedCommitments.first(where: { $0.startTime > now })
+        let nextBlock = timedCommitments.first(where: { $0.startTime > now && $0.startTime < endOfToday })
 
         if let hero = activeBlock ?? nextBlock {
             let isCurrent = activeBlock != nil
@@ -341,14 +388,6 @@ public struct TodayView: View {
         }
     }
 
-    private var pendingTasks: [TaskItem] {
-        tasks.filter { $0.status != .completed }
-    }
-
-    private var completedTasks: [TaskItem] {
-        tasks.filter { $0.status == .completed }
-    }
-
     private var prioritiesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -357,7 +396,7 @@ public struct TodayView: View {
                     .tracking(1.2)
                     .foregroundStyle(MateTheme.silverMuted)
                 Spacer()
-                if !tasks.isEmpty {
+                if !todayTasks.isEmpty {
                     Button {
                         #if canImport(UIKit)
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -387,11 +426,11 @@ public struct TodayView: View {
                 }
             }
 
-            if tasks.isEmpty {
+            if todayTasks.isEmpty {
                 HStack(spacing: 10) {
                     Image(systemName: "checkmark.circle")
                         .foregroundStyle(MateTheme.slateDim)
-                    Text("No pending tasks. You are in total flow.")
+                    Text("No pending tasks for today. You are in total flow.")
                         .font(.subheadline)
                         .foregroundStyle(MateTheme.silverMuted)
                 }
@@ -726,10 +765,10 @@ public struct TodayView: View {
     }
 
     private var briefingStatusText: String {
-        let meetings = scheduledBlocks.filter { $0.isLocked && !$0.isAllDay }.count
-        let remaining = tasks.filter { $0.status != .completed }.count
+        let meetings = timedCommitments.filter { $0.isLocked }.count
+        let remaining = pendingTasks.count
         if isEvening {
-            let completed = tasks.filter { $0.status == .completed }.count
+            let completed = completedTasks.count
             return "\(completed) completed · \(remaining) pending"
         } else {
             let meetingWord = meetings == 1 ? "commitment" : "commitments"
@@ -747,7 +786,7 @@ public struct TodayView: View {
     private func generateAvailability() {
         let slots = availabilityEngine.findAvailableSlots(
             durationMinutes: 45,
-            existingCommitments: scheduledBlocks,
+            existingCommitments: todayScheduledBlocks,
             preferences: UserPreference.load(),
             targetDate: Date(),
             maxSlots: 3

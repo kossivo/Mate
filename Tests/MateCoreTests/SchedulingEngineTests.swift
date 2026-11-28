@@ -269,4 +269,46 @@ struct SmartSchedulingEngineTests {
         #expect(startHour == 13)
         #expect(startMin == 15)
     }
+
+    @Test func testSmartSchedulingExcludesTasksDueOnFutureDays() {
+        let engine = SmartSchedulingEngine()
+        let calendar = Calendar(identifier: .gregorian)
+
+        var todayComp = DateComponents()
+        todayComp.year = 2026
+        todayComp.month = 11
+        todayComp.day = 27
+        todayComp.hour = 9
+        todayComp.minute = 0
+        let today = calendar.date(from: todayComp)!
+
+        var tomorrowComp = DateComponents()
+        tomorrowComp.year = 2026
+        tomorrowComp.month = 11
+        tomorrowComp.day = 28
+        tomorrowComp.hour = 14
+        tomorrowComp.minute = 0
+        let tomorrow = calendar.date(from: tomorrowComp)!
+
+        let todayTask = TaskItem(title: "Task Due Today", estimatedDuration: 1800, priority: .high)
+        let floatingTask = TaskItem(title: "Floating Backlog Task", estimatedDuration: 1800, priority: .medium)
+        var tomorrowTask = TaskItem(title: "Task Due Tomorrow", estimatedDuration: 1800, priority: .urgent)
+        tomorrowTask.deadline = tomorrow
+
+        let prefs = UserPreference(workStartHour: 9, workStartMinute: 0, workEndHour: 17, workEndMinute: 0)
+
+        // Schedule for today
+        let proposal = engine.schedule(
+            tasks: [todayTask, floatingTask, tomorrowTask],
+            existingCommitments: [],
+            preferences: prefs,
+            targetDate: today
+        )
+
+        // Only todayTask and floatingTask should be scheduled today!
+        // tomorrowTask belongs strictly to tomorrow and must NOT be scheduled today!
+        #expect(proposal.scheduledBlocks.contains(where: { $0.title == "Task Due Today" }))
+        #expect(proposal.scheduledBlocks.contains(where: { $0.title == "Floating Backlog Task" }))
+        #expect(!proposal.scheduledBlocks.contains(where: { $0.title == "Task Due Tomorrow" }))
+    }
 }

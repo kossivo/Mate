@@ -16,7 +16,7 @@ struct AvailabilityEngineTests {
         let meetingEnd = calendar.date(bySettingHour: 12, minute: 30, second: 0, of: targetDate)!
         let meeting = TimeBlock(title: "Client Sync", startTime: meetingStart, endTime: meetingEnd, isLocked: true)
 
-        let prefs = UserPreference(workStartHour: 9, workEndHour: 17, meetingBufferMinutes: 10)
+        let prefs = UserPreference(workStartHour: 9, workEndHour: 17, meetingBufferMinutes: 10, protectWeekends: false)
 
         let slots = engine.findAvailableSlots(
             durationMinutes: 45,
@@ -52,7 +52,7 @@ struct AvailabilityEngineTests {
         let meetingEnd = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: targetDate)!
         let meeting = TimeBlock(title: "Design Review", startTime: meetingStart, endTime: meetingEnd, isLocked: true)
 
-        let prefs = UserPreference(workStartHour: 9, workEndHour: 17, meetingBufferMinutes: 10)
+        let prefs = UserPreference(workStartHour: 9, workEndHour: 17, meetingBufferMinutes: 10, protectWeekends: false)
 
         let suggestions = engine.suggestOptimalSlots(
             existingCommitments: [meeting],
@@ -90,7 +90,7 @@ struct AvailabilityEngineTests {
             priority: .high
         )
 
-        let prefs = UserPreference(workStartHour: 9, workEndHour: 17, meetingBufferMinutes: 10)
+        let prefs = UserPreference(workStartHour: 9, workEndHour: 17, meetingBufferMinutes: 10, protectWeekends: false)
 
         let suggestions = engine.generateSmartSuggestions(
             tasks: [meetingTask, deadlineTask],
@@ -114,7 +114,7 @@ struct AvailabilityEngineTests {
         let calendar = Calendar(identifier: .gregorian)
         let targetDate = calendar.date(bySettingHour: 8, minute: 30, second: 0, of: Date())!
 
-        let prefs = UserPreference(workStartHour: 8, workStartMinute: 30, workEndHour: 17, workEndMinute: 30, meetingBufferMinutes: 10)
+        let prefs = UserPreference(workStartHour: 8, workStartMinute: 30, workEndHour: 17, workEndMinute: 30, meetingBufferMinutes: 10, protectWeekends: false)
 
         let slots = engine.findAvailableSlots(
             durationMinutes: 45,

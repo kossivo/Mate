@@ -149,7 +149,7 @@ public struct DashboardView: View {
                 )
             }
             .sheet(isPresented: $showingPlanSheet) {
-                PlanView(tasks: tasks, existingBlocks: scheduledBlocks) { proposal in
+                PlanView(tasks: tasksForSelectedScope, existingBlocks: eventsForSelectedScope, targetDate: targetDateForScope) { proposal in
                     store.applyProposal(proposal, targetDate: targetDateForScope)
                     withAnimation {
                         toastBanner = "✓ Schedule optimized (\(proposal.scheduledBlocks.count) tasks planned)"
@@ -478,7 +478,7 @@ public struct DashboardView: View {
         case .today:
             return tasks.filter { task in
                 guard let d = task.deadline else { return true }
-                return d >= startOfToday && d < startOfTomorrow
+                return d < startOfTomorrow
             }
         case .tomorrow:
             return tasks.filter { task in

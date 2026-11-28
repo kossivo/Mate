@@ -4,6 +4,7 @@ public struct PlanView: View {
     @Environment(\.dismiss) private var dismiss
     public let tasks: [TaskItem]
     public let existingBlocks: [TimeBlock]
+    public let targetDate: Date
     public let onConfirm: (SchedulingProposal) -> Void
 
     @State private var candidateTasks: [TaskItem] = []
@@ -14,17 +15,22 @@ public struct PlanView: View {
     public init(
         tasks: [TaskItem],
         existingBlocks: [TimeBlock],
+        targetDate: Date = Date(),
         onConfirm: @escaping (SchedulingProposal) -> Void
     ) {
         self.tasks = tasks
         self.existingBlocks = existingBlocks
+        self.targetDate = targetDate
         self.onConfirm = onConfirm
     }
 
     private var unifiedTimeline: [TimeBlock] {
-        let existingTimed = existingBlocks.filter { !$0.isAllDay }
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: targetDate)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return [] }
+        let existingTimed = existingBlocks.filter { !$0.isAllDay && $0.endTime > startOfDay && $0.startTime < endOfDay }
         let existingIds = Set(existingTimed.map { $0.id })
-        let newBlocks = proposal.scheduledBlocks.filter { !existingIds.contains($0.id) }
+        let newBlocks = proposal.scheduledBlocks.filter { !existingIds.contains($0.id) && $0.endTime > startOfDay && $0.startTime < endOfDay }
         return (existingTimed + newBlocks).sorted { $0.startTime < $1.startTime }
     }
 
@@ -109,8 +115,21 @@ public struct PlanView: View {
                 }
             }
             .task {
+                let calendar = Calendar.current
+                let startOfDay = calendar.startOfDay(for: targetDate)
+                let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? targetDate
+
                 candidateTasks = tasks
-                    .filter { $0.status != .completed && $0.status != .cancelled }
+                    .filter { task in
+                        guard task.status != .completed && task.status != .cancelled else { return false }
+                        // If a task has a deadline strictly on a future day after targetDate, do NOT cram it into targetDate
+                        if let deadline = task.deadline {
+                            if deadline >= endOfDay {
+                                return false
+                            }
+                        }
+                        return true
+                    }
                     .sorted { (lhs, rhs) -> Bool in
                         if lhs.priority != rhs.priority {
                             return lhs.priority < rhs.priority
@@ -126,13 +145,14 @@ public struct PlanView: View {
 
     private func recalculateSchedule(preserveOrder: Bool = false) {
         let prefs = UserPreference.load()
-        let now = Date()
+        let calendar = Calendar.current
+        let refDate: Date? = calendar.isDateInToday(targetDate) ? Date() : nil
         proposal = engine.schedule(
             tasks: candidateTasks,
             existingCommitments: existingBlocks,
             preferences: prefs,
-            targetDate: now,
-            referenceDate: now,
+            targetDate: targetDate,
+            referenceDate: refDate,
             preserveOrder: preserveOrder
         )
         isAnalyzing = false

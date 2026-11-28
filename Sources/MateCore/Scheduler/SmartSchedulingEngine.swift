@@ -128,13 +128,26 @@ public final class SmartSchedulingEngine: @unchecked Sendable {
             availableSlots.append((start: pointer, end: dayEnd))
         }
 
-        // 4. Tasks candidate selection (preserve manual order if requested, else sort by priority -> deadline -> duration)
+        // 4. Tasks candidate selection (filter tasks to those eligible for targetDate, preserve manual order if requested, else sort by priority -> deadline -> duration)
+        let startOfTargetDay = calendar.startOfDay(for: targetDate)
+        let endOfTargetDay = calendar.date(byAdding: .day, value: 1, to: startOfTargetDay) ?? targetDate
+
+        let eligibleTasks = tasks.filter { task in
+            guard task.status != .completed && task.status != .cancelled else { return false }
+            // If task has a deadline strictly on a future day after targetDate, do NOT cram it into targetDate
+            if let deadline = task.deadline {
+                if deadline >= endOfTargetDay {
+                    return false
+                }
+            }
+            return true
+        }
+
         let candidateTasks: [TaskItem]
         if preserveOrder {
-            candidateTasks = tasks.filter { $0.status != .completed && $0.status != .cancelled }
+            candidateTasks = eligibleTasks
         } else {
-            candidateTasks = tasks
-                .filter { $0.status != .completed && $0.status != .cancelled }
+            candidateTasks = eligibleTasks
                 .sorted { (lhs, rhs) -> Bool in
                     if lhs.priority != rhs.priority {
                         return lhs.priority < rhs.priority
